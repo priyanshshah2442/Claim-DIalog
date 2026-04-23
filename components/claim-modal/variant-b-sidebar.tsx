@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { XIcon, FileTextIcon, SparklesIcon, LockIcon } from "lucide-react"
+import { XIcon, FileTextIcon, LockIcon } from "lucide-react"
 import { RATES, SERVICES, type OutcomeScenario } from "@/lib/claim-prefill-data"
 import { cn } from "@/lib/utils"
 
@@ -83,30 +83,23 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
           </button>
         </div>
 
-        {/* Pre-fill banner */}
-        <div className="mx-6 mb-5 rounded-lg border border-[#cfdcd4] bg-[#eef3f0] px-4 py-3">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#7a9a8e]">
-              <SparklesIcon className="size-3.5 text-white" strokeWidth={2} />
-            </div>
-            <div className="flex-1">
-              <p className="text-[13px] font-semibold text-stone-800">
-                Pre-filled from outcome data
-              </p>
-              <p className="mt-0.5 text-[13px] leading-relaxed text-stone-600">
-                Based on the outcome submitted on {scenario.submittedOn}.{" "}
-                <span className="text-stone-500">
-                  {disabledRateCount > 0 &&
-                    `${disabledRateCount} rate${disabledRateCount > 1 ? "s" : ""}`}
-                  {disabledRateCount > 0 && disabledServiceCount > 0 && " and "}
-                  {disabledServiceCount > 0 &&
-                    `${disabledServiceCount} service${disabledServiceCount > 1 ? "s" : ""}`}
-                  {(disabledRateCount > 0 || disabledServiceCount > 0) &&
-                    " unavailable for this cycle."}
-                </span>
-              </p>
-            </div>
-          </div>
+        {/* Pre-fill banner — matches outcome modal accent style */}
+        <div className="mx-6 mb-5 rounded-r-lg border-l-4 border-[#d4a5a5] bg-white py-3 pl-4 pr-5 shadow-sm">
+          <p className="text-sm leading-relaxed text-stone-700">
+            <span className="font-semibold text-stone-900">Pre-filled from outcome data.</span>{" "}
+            Based on the outcome submitted on {scenario.submittedOn}.
+            {(disabledRateCount > 0 || disabledServiceCount > 0) && (
+              <span className="text-stone-500">
+                {" "}
+                {disabledRateCount > 0 &&
+                  `${disabledRateCount} rate${disabledRateCount > 1 ? "s" : ""}`}
+                {disabledRateCount > 0 && disabledServiceCount > 0 && " and "}
+                {disabledServiceCount > 0 &&
+                  `${disabledServiceCount} service${disabledServiceCount > 1 ? "s" : ""}`}
+                {" unavailable for this cycle."}
+              </span>
+            )}
+          </p>
         </div>
 
         <div className="flex-1 space-y-5 px-6 pb-6">
@@ -254,8 +247,8 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                             {service.label}
                           </span>
                           {autoFilled && !disabled && (
-                            <span className="rounded-full bg-[#eef3f0] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#5a7a6e]">
-                              Auto
+                            <span className="rounded-full bg-[#eef3f0] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#5a7a6e]">
+                              Pre-filled
                             </span>
                           )}
                         </div>
