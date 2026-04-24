@@ -123,7 +123,7 @@ export const SERVICES: BillableService[] = [
   },
   {
     id: "pgt",
-    label: "PGT Biopsy per embryo (89290)",
+    label: "PGT Biopsy per embryo",
     requires: "biopsy",
     kind: "per-unit",
     unitLabel: "Embryos",
