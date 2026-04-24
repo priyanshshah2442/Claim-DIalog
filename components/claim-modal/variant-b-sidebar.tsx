@@ -7,34 +7,47 @@ import {
   SparklesIcon,
   CheckCircle2Icon,
   XCircleIcon,
+  MinusIcon,
+  PlusIcon,
 } from "lucide-react"
 import { RATES, SERVICES, type OutcomeScenario } from "@/lib/claim-prefill-data"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 /**
- * Variant B (refined v3) — Outcome sidebar + pre-fill banner.
+ * Variant B (refined v4) — Outcome sidebar + pre-fill banner with
+ * support for per-unit and tiered billable services.
  *
- * - Sidebar mirrors the outcome modal's step/answer pattern so the
- *   claim screen reads like a recap of what was submitted.
- * - Banner uses the same left-accent style as the outcome modals.
- * - Pre-fill is signalled subtly with a small sparkles icon + tooltip,
- *   applied to both the treatment dropdown and billable services.
- * - Unavailable billable services are filtered out entirely (mirrors
- *   the current production behaviour). Unavailable rates still appear
- *   in the dropdown, disabled, with a short reason.
+ * - Flat services: checkbox only.
+ * - Per-unit services (e.g. "PGT Biopsy per embryo"): checkbox +
+ *   numeric stepper. When the outcome data provides a count (e.g.
+ *   # biopsied), both the checkbox and the quantity are pre-filled.
+ * - Tiered services (e.g. "Embryo storage — 6/12/24 months"): checkbox
+ *   + option dropdown. These are NEVER pre-filled — the clinic must
+ *   explicitly opt in and pick the tier.
  */
 export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
   const [rateId, setRateId] = useState<string | null>(scenario.prefill.preselectedRateId)
   const [checked, setChecked] = useState<Set<string>>(
     new Set(scenario.prefill.prefilledServiceIds)
   )
+  const [quantities, setQuantities] = useState<Record<string, number>>(
+    scenario.prefill.servicePrefillQuantities ?? {}
+  )
+  const [tierSelections, setTierSelections] = useState<Record<string, string>>({})
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
   useEffect(() => {
     setRateId(scenario.prefill.preselectedRateId)
     setChecked(new Set(scenario.prefill.prefilledServiceIds))
-  }, [scenario.id, scenario.prefill.preselectedRateId, scenario.prefill.prefilledServiceIds])
+    setQuantities(scenario.prefill.servicePrefillQuantities ?? {})
+    setTierSelections({})
+  }, [
+    scenario.id,
+    scenario.prefill.preselectedRateId,
+    scenario.prefill.prefilledServiceIds,
+    scenario.prefill.servicePrefillQuantities,
+  ])
 
   const selectedRate = useMemo(() => RATES.find((r) => r.id === rateId), [rateId])
   const treatmentPrefilled =
@@ -44,6 +57,17 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
   const visibleServices = SERVICES.filter(
     (s) => !scenario.prefill.disabledServiceIds.includes(s.id)
   )
+
+  const toggleChecked = (id: string) =>
+    setChecked((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  const setQuantity = (id: string, value: number) =>
+    setQuantities((prev) => ({ ...prev, [id]: Math.max(0, value) }))
 
   return (
     <div className="flex h-full w-full bg-white">
@@ -207,52 +231,51 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
               <label className="text-[13px] font-semibold text-stone-900">
                 Billable Services
               </label>
-              <ul className="mt-2 space-y-0.5">
+              <ul className="mt-2 space-y-1">
                 {visibleServices.map((service) => {
                   const isChecked = checked.has(service.id)
                   const prefilled = scenario.prefill.prefilledServiceIds.includes(
                     service.id
                   )
+                  const quantityPrefilled =
+                    service.kind === "per-unit" &&
+                    scenario.prefill.servicePrefillQuantities?.[service.id] !== undefined
+
                   return (
-                    <li
-                      key={service.id}
-                      className="flex items-center gap-3 rounded-lg px-1 py-1.5"
-                    >
-                      <button
-                        onClick={() => {
-                          setChecked((prev) => {
-                            const next = new Set(prev)
-                            if (next.has(service.id)) next.delete(service.id)
-                            else next.add(service.id)
-                            return next
-                          })
-                        }}
-                        className={cn(
-                          "flex size-[18px] shrink-0 items-center justify-center rounded border transition-colors",
-                          isChecked
-                            ? "border-stone-900 bg-stone-900"
-                            : "border-stone-300 bg-white hover:border-stone-500"
-                        )}
-                        aria-label={service.label}
-                      >
-                        {isChecked && (
-                          <svg
-                            className="size-3 text-white"
-                            viewBox="0 0 12 12"
-                            fill="none"
-                          >
-                            <path
-                              d="M2.5 6l2.5 2.5L9.5 3.5"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        )}
-                      </button>
-                      <span className="text-sm text-stone-900">{service.label}</span>
-                      {prefilled && isChecked && <PrefilledHint />}
+                    <li key={service.id} className="flex flex-col gap-2 py-1">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={isChecked}
+                          onChange={() => toggleChecked(service.id)}
+                          label={service.label}
+                        />
+                        <span className="text-sm text-stone-900">{service.label}</span>
+                        {prefilled && isChecked && quantityPrefilled && <PrefilledHint />}
+                      </div>
+
+                      {/* Per-unit stepper */}
+                      {isChecked && service.kind === "per-unit" && (
+                        <div className="ml-[30px]">
+                          <QuantityStepper
+                            value={quantities[service.id] ?? 0}
+                            onChange={(v) => setQuantity(service.id, v)}
+                            unitLabel={service.unitLabel ?? ""}
+                          />
+                        </div>
+                      )}
+
+                      {/* Tiered option select */}
+                      {isChecked && service.kind === "tiered" && service.options && (
+                        <div className="ml-[30px]">
+                          <TierSelect
+                            options={service.options}
+                            value={tierSelections[service.id]}
+                            onChange={(v) =>
+                              setTierSelections((prev) => ({ ...prev, [service.id]: v }))
+                            }
+                          />
+                        </div>
+                      )}
                     </li>
                   )
                 })}
@@ -308,5 +331,109 @@ function PrefilledHint() {
         Pre-filled from outcome data
       </TooltipContent>
     </Tooltip>
+  )
+}
+
+function Checkbox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean
+  onChange: () => void
+  label: string
+}) {
+  return (
+    <button
+      onClick={onChange}
+      className={cn(
+        "flex size-[18px] shrink-0 items-center justify-center rounded border transition-colors",
+        checked
+          ? "border-stone-900 bg-stone-900"
+          : "border-stone-300 bg-white hover:border-stone-500"
+      )}
+      aria-label={label}
+      aria-checked={checked}
+      role="checkbox"
+    >
+      {checked && (
+        <svg className="size-3 text-white" viewBox="0 0 12 12" fill="none">
+          <path
+            d="M2.5 6l2.5 2.5L9.5 3.5"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+    </button>
+  )
+}
+
+function QuantityStepper({
+  value,
+  onChange,
+  unitLabel,
+}: {
+  value: number
+  onChange: (v: number) => void
+  unitLabel: string
+}) {
+  return (
+    <div className="inline-flex items-center overflow-hidden rounded-lg border border-stone-300 bg-white">
+      <button
+        onClick={() => onChange(value - 1)}
+        disabled={value <= 0}
+        className="flex size-8 items-center justify-center text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-300"
+        aria-label="Decrease"
+      >
+        <MinusIcon className="size-3.5" strokeWidth={2.5} />
+      </button>
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value) || 0)}
+        className="w-10 border-x border-stone-300 py-1.5 text-center text-sm font-medium text-stone-900 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+      <button
+        onClick={() => onChange(value + 1)}
+        className="flex size-8 items-center justify-center text-stone-600 hover:bg-stone-50"
+        aria-label="Increase"
+      >
+        <PlusIcon className="size-3.5" strokeWidth={2.5} />
+      </button>
+      <span className="px-3 text-sm text-stone-500">{unitLabel}</span>
+    </div>
+  )
+}
+
+function TierSelect({
+  options,
+  value,
+  onChange,
+}: {
+  options: { id: string; label: string }[]
+  value: string | undefined
+  onChange: (v: string) => void
+}) {
+  return (
+    <select
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value)}
+      className={cn(
+        "rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm focus:border-stone-500 focus:outline-none",
+        value ? "text-stone-900" : "text-stone-400"
+      )}
+    >
+      <option value="" disabled>
+        Select duration
+      </option>
+      {options.map((opt) => (
+        <option key={opt.id} value={opt.id} className="text-stone-900">
+          {opt.label}
+        </option>
+      ))}
+    </select>
   )
 }

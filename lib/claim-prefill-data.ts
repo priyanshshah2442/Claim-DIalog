@@ -19,6 +19,16 @@ export type BillableService = {
   id: string
   label: string
   requires: "retrieval" | "embryos-stored" | "biopsy" | "none"
+  /**
+   * "flat"      — simple checkbox only
+   * "per-unit"  — checkbox + numeric stepper (e.g. "PGT Biopsy per embryo")
+   * "tiered"    — checkbox + option dropdown (e.g. "Embryo storage — 6 / 12 / 24 months")
+   */
+  kind: "flat" | "per-unit" | "tiered"
+  /** Label beside the numeric stepper for per-unit services (e.g. "Embryos") */
+  unitLabel?: string
+  /** Options for tiered services */
+  options?: { id: string; label: string }[]
 }
 
 /**
@@ -44,8 +54,22 @@ export type OutcomeScenario = {
   prefill: {
     preselectedRateId: string | null
     disabledRateIds: string[]
+    /**
+     * Services that are pre-checked. Per guidance, tiered (dropdown-
+     * from-options) services are NEVER included here — the clinic must
+     * explicitly pick them and pick the option themselves.
+     */
     prefilledServiceIds: string[]
+    /**
+     * Unavailable services — hidden entirely from the list (mirrors
+     * current production behaviour).
+     */
     disabledServiceIds: string[]
+    /**
+     * Pre-filled quantity for per-unit services (e.g. number of embryos
+     * biopsied). Keyed by service id.
+     */
+    servicePrefillQuantities?: Record<string, number>
     /** Short reason copy keyed by rate/service id */
     reasonLabels: Record<string, string>
   }
@@ -79,11 +103,27 @@ export const RATES: TreatmentRate[] = [
 ]
 
 export const SERVICES: BillableService[] = [
-  { id: "anaesthesia", label: "Anaesthesia", requires: "retrieval" },
-  { id: "icsi", label: "ICSI", requires: "retrieval" },
-  { id: "storage", label: "Embryo storage (12 months)", requires: "embryos-stored" },
-  { id: "pgt", label: "PGT biopsy — any number of embryos", requires: "biopsy" },
-  { id: "hatching", label: "Assisted hatching", requires: "embryos-stored" },
+  { id: "anaesthesia", label: "Anaesthesia", requires: "retrieval", kind: "flat" },
+  { id: "icsi", label: "ICSI", requires: "retrieval", kind: "flat" },
+  {
+    id: "storage",
+    label: "Embryo storage",
+    requires: "embryos-stored",
+    kind: "tiered",
+    options: [
+      { id: "6m", label: "6 months" },
+      { id: "12m", label: "12 months" },
+      { id: "24m", label: "24 months" },
+    ],
+  },
+  {
+    id: "pgt",
+    label: "PGT Biopsy per embryo (89290)",
+    requires: "biopsy",
+    kind: "per-unit",
+    unitLabel: "Embryos",
+  },
+  { id: "hatching", label: "Assisted hatching", requires: "embryos-stored", kind: "flat" },
 ]
 
 export const SCENARIOS: OutcomeScenario[] = [
@@ -104,8 +144,12 @@ export const SCENARIOS: OutcomeScenario[] = [
     prefill: {
       preselectedRateId: "ivf-freeze-all",
       disabledRateIds: ["cx-monitoring", "cx-aspiration", "cx-pre-transfer"],
-      prefilledServiceIds: ["anaesthesia", "icsi", "storage", "pgt"],
+      // `storage` is tiered → NOT pre-checked, user picks it and the tier.
+      prefilledServiceIds: ["anaesthesia", "icsi", "pgt"],
       disabledServiceIds: [],
+      servicePrefillQuantities: {
+        pgt: 5,
+      },
       reasonLabels: {
         "cx-monitoring": "Retrieval was completed",
         "cx-aspiration": "Embryos were created",
@@ -120,9 +164,7 @@ export const SCENARIOS: OutcomeScenario[] = [
     submittedOn: "Dec 14, 2025",
     treatmentType: "IVF Freeze-all",
     authId: "AUTH-00151",
-    steps: [
-      { label: "Retrieval", status: "no" },
-    ],
+    steps: [{ label: "Retrieval", status: "no" }],
     prefill: {
       preselectedRateId: "cx-monitoring",
       disabledRateIds: ["ivf-freeze-all", "cx-aspiration", "cx-pre-transfer"],
@@ -132,11 +174,6 @@ export const SCENARIOS: OutcomeScenario[] = [
         "ivf-freeze-all": "Retrieval did not happen",
         "cx-aspiration": "Requires a completed aspiration",
         "cx-pre-transfer": "Not applicable — no transfer stage reached",
-        anaesthesia: "Retrieval did not happen",
-        icsi: "Retrieval did not happen",
-        storage: "No embryos to store",
-        pgt: "No embryos to biopsy",
-        hatching: "No embryos",
       },
     },
   },
@@ -160,9 +197,6 @@ export const SCENARIOS: OutcomeScenario[] = [
         "ivf-freeze-all": "No embryos were created",
         "cx-monitoring": "Retrieval was completed",
         "cx-pre-transfer": "Not applicable — no transfer stage reached",
-        storage: "No embryos to store",
-        pgt: "No embryos to biopsy",
-        hatching: "No embryos",
       },
     },
   },
