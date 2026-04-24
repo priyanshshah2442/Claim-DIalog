@@ -9,6 +9,7 @@ import {
   XCircleIcon,
   MinusIcon,
   PlusIcon,
+  AlertTriangleIcon,
 } from "lucide-react"
 import { RATES, SERVICES, type OutcomeScenario } from "@/lib/claim-prefill-data"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -254,15 +255,39 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                       </div>
 
                       {/* Per-unit stepper */}
-                      {isChecked && service.kind === "per-unit" && (
-                        <div className="ml-[30px]">
-                          <QuantityStepper
-                            value={quantities[service.id] ?? 0}
-                            onChange={(v) => setQuantity(service.id, v)}
-                            unitLabel={service.unitLabel ?? ""}
-                          />
-                        </div>
-                      )}
+                      {isChecked && service.kind === "per-unit" && (() => {
+                        const prefillQty =
+                          scenario.prefill.servicePrefillQuantities?.[service.id]
+                        const currentQty = quantities[service.id] ?? 0
+                        const mismatch =
+                          prefillQty !== undefined && currentQty !== prefillQty
+                        return (
+                          <div className="ml-[30px] flex flex-col gap-2">
+                            <QuantityStepper
+                              value={currentQty}
+                              onChange={(v) => setQuantity(service.id, v)}
+                              unitLabel={service.unitLabel ?? ""}
+                            />
+                            {mismatch && (
+                              <div className="flex items-start gap-2 rounded-md border border-[#e8d5b7] bg-[#fdf7ed] px-3 py-2">
+                                <AlertTriangleIcon
+                                  className="mt-0.5 size-3.5 shrink-0 text-[#b8892d]"
+                                  strokeWidth={2}
+                                />
+                                <p className="text-[12px] leading-relaxed text-stone-700">
+                                  <span className="font-medium text-stone-900">
+                                    Claimed quantity differs from outcome data
+                                  </span>{" "}
+                                  <span className="text-stone-500">
+                                    (outcome: {prefillQty}, claim: {currentQty}).
+                                  </span>{" "}
+                                  This claim will be flagged for manual review.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
 
                       {/* Tiered option select */}
                       {isChecked && service.kind === "tiered" && service.options && (
