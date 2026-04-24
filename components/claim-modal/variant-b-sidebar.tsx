@@ -262,7 +262,7 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                         const mismatch =
                           prefillQty !== undefined && currentQty !== prefillQty
                         return (
-                          <div className="ml-[30px] flex flex-col gap-2">
+                          <div className="ml-[30px] flex flex-col items-start gap-2">
                             <QuantityStepper
                               value={currentQty}
                               onChange={(v) => setQuantity(service.id, v)}
@@ -280,8 +280,10 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                                   </span>{" "}
                                   <span className="text-stone-500">
                                     (outcome: {prefillQty}, claim: {currentQty}).
-                                  </span>{" "}
-                                  This claim will be flagged for manual review.
+                                  </span>
+                                  <br />
+                                  You can still claim, this will be sent for manual
+                                  review.
                                 </p>
                               </div>
                             )}
