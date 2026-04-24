@@ -34,19 +34,22 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
   const [quantities, setQuantities] = useState<Record<string, number>>(
     scenario.prefill.servicePrefillQuantities ?? {}
   )
-  const [tierSelections, setTierSelections] = useState<Record<string, string>>({})
+  const [tierSelections, setTierSelections] = useState<Record<string, string>>(
+    scenario.prefill.servicePrefillTiers ?? {}
+  )
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
   useEffect(() => {
     setRateId(scenario.prefill.preselectedRateId)
     setChecked(new Set(scenario.prefill.prefilledServiceIds))
     setQuantities(scenario.prefill.servicePrefillQuantities ?? {})
-    setTierSelections({})
+    setTierSelections(scenario.prefill.servicePrefillTiers ?? {})
   }, [
     scenario.id,
     scenario.prefill.preselectedRateId,
     scenario.prefill.prefilledServiceIds,
     scenario.prefill.servicePrefillQuantities,
+    scenario.prefill.servicePrefillTiers,
   ])
 
   const selectedRate = useMemo(() => RATES.find((r) => r.id === rateId), [rateId])
@@ -237,9 +240,6 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                   const prefilled = scenario.prefill.prefilledServiceIds.includes(
                     service.id
                   )
-                  const quantityPrefilled =
-                    service.kind === "per-unit" &&
-                    scenario.prefill.servicePrefillQuantities?.[service.id] !== undefined
 
                   return (
                     <li key={service.id} className="flex flex-col gap-2 py-1">
@@ -250,7 +250,7 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                           label={service.label}
                         />
                         <span className="text-sm text-stone-900">{service.label}</span>
-                        {prefilled && isChecked && quantityPrefilled && <PrefilledHint />}
+                        {prefilled && isChecked && <PrefilledHint />}
                       </div>
 
                       {/* Per-unit stepper */}

@@ -70,6 +70,11 @@ export type OutcomeScenario = {
      * biopsied). Keyed by service id.
      */
     servicePrefillQuantities?: Record<string, number>
+    /**
+     * Pre-filled option id for tiered services (e.g. "12m" for embryo
+     * storage). Keyed by service id.
+     */
+    servicePrefillTiers?: Record<string, string>
     /** Short reason copy keyed by rate/service id */
     reasonLabels: Record<string, string>
   }
@@ -144,11 +149,13 @@ export const SCENARIOS: OutcomeScenario[] = [
     prefill: {
       preselectedRateId: "ivf-freeze-all",
       disabledRateIds: ["cx-monitoring", "cx-aspiration", "cx-pre-transfer"],
-      // `storage` is tiered → NOT pre-checked, user picks it and the tier.
-      prefilledServiceIds: ["anaesthesia", "icsi", "pgt"],
+      prefilledServiceIds: ["anaesthesia", "icsi", "pgt", "storage"],
       disabledServiceIds: [],
       servicePrefillQuantities: {
         pgt: 5,
+      },
+      servicePrefillTiers: {
+        storage: "12m",
       },
       reasonLabels: {
         "cx-monitoring": "Retrieval was completed",
