@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import {
   XIcon,
   LockIcon,
-  SparklesIcon,
+  Wand2Icon,
   CheckCircle2Icon,
   XCircleIcon,
   MinusIcon,
@@ -348,10 +348,10 @@ function PrefilledHint() {
     <Tooltip>
       <TooltipTrigger asChild>
         <span
-          className="inline-flex cursor-help items-center text-[#7a9a8e]"
+          className="inline-flex cursor-help items-center text-stone-400"
           aria-label="Pre-filled from outcome data"
         >
-          <SparklesIcon className="size-3.5" strokeWidth={2} />
+          <Wand2Icon className="size-3.5" strokeWidth={2} />
         </span>
       </TooltipTrigger>
       <TooltipContent className="max-w-[200px] text-center text-xs">
