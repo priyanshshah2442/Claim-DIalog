@@ -1,19 +1,28 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { XIcon, FileTextIcon, LockIcon } from "lucide-react"
+import {
+  XIcon,
+  LockIcon,
+  SparklesIcon,
+  CheckCircle2Icon,
+  XCircleIcon,
+} from "lucide-react"
 import { RATES, SERVICES, type OutcomeScenario } from "@/lib/claim-prefill-data"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 /**
- * Variant B (refined) — Outcome sidebar + pre-fill banner.
+ * Variant B (refined v3) — Outcome sidebar + pre-fill banner.
  *
- * - Left sidebar anchors the outcome facts (the "why").
- * - Top banner summarises the pre-fill (borrowed from Variant A).
- * - Treatment dropdown lists every rate; disabled rates show a lock
- *   icon and a short reason subtitle, like Variant A.
- * - Billable services show every row; disabled rows are locked inline
- *   with a reason — no hidden counters.
+ * - Sidebar mirrors the outcome modal's step/answer pattern so the
+ *   claim screen reads like a recap of what was submitted.
+ * - Banner uses the same left-accent style as the outcome modals.
+ * - Pre-fill is signalled subtly with a small sparkles icon + tooltip,
+ *   applied to both the treatment dropdown and billable services.
+ * - Unavailable billable services are filtered out entirely (mirrors
+ *   the current production behaviour). Unavailable rates still appear
+ *   in the dropdown, disabled, with a short reason.
  */
 export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
   const [rateId, setRateId] = useState<string | null>(scenario.prefill.preselectedRateId)
@@ -28,44 +37,67 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
   }, [scenario.id, scenario.prefill.preselectedRateId, scenario.prefill.prefilledServiceIds])
 
   const selectedRate = useMemo(() => RATES.find((r) => r.id === rateId), [rateId])
+  const treatmentPrefilled =
+    rateId !== null && rateId === scenario.prefill.preselectedRateId
 
-  const disabledRateCount = scenario.prefill.disabledRateIds.length
-  const disabledServiceCount = scenario.prefill.disabledServiceIds.length
+  // Only show services that are available for this outcome
+  const visibleServices = SERVICES.filter(
+    (s) => !scenario.prefill.disabledServiceIds.includes(s.id)
+  )
 
   return (
     <div className="flex h-full w-full bg-white">
-      {/* Sidebar */}
+      {/* Sidebar — recap of the submitted outcome */}
       <aside className="flex w-[260px] shrink-0 flex-col gap-4 border-r border-stone-200 bg-[#f8f5f2] px-5 py-5">
-        <div className="flex items-center gap-2">
-          <FileTextIcon className="size-4 text-[#7a9a8e]" strokeWidth={2} />
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-600">
-            Outcome Data
-          </span>
-        </div>
-
         <div>
-          <p className="font-serif text-[15px] font-semibold text-stone-900">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+            Outcome Submitted
+          </p>
+          <p className="mt-1 font-serif text-[15px] font-semibold text-stone-900">
             {scenario.treatmentType}
           </p>
           <p className="mt-0.5 text-[12px] text-stone-500">
-            Submitted {scenario.submittedOn}
+            {scenario.authId} · {scenario.submittedOn}
           </p>
         </div>
 
         <div className="h-px bg-stone-200" />
 
-        <dl className="space-y-2.5">
-          {scenario.factsList.map((f) => (
-            <div key={f.label}>
-              <dt className="text-[11px] uppercase tracking-wide text-stone-500">
-                {f.label}
-              </dt>
-              <dd className="mt-0.5 text-[13px] font-medium text-stone-900">
-                {f.value}
-              </dd>
-            </div>
+        <ul className="space-y-2.5">
+          {scenario.steps.map((step) => (
+            <li key={step.label} className="flex items-start gap-2.5">
+              {step.status === "yes" && (
+                <CheckCircle2Icon
+                  className="mt-0.5 size-4 shrink-0 text-[#7a9a8e]"
+                  strokeWidth={2}
+                />
+              )}
+              {step.status === "no" && (
+                <XCircleIcon
+                  className="mt-0.5 size-4 shrink-0 text-stone-400"
+                  strokeWidth={2}
+                />
+              )}
+              {step.status === "value" && (
+                <span className="mt-1 block size-1.5 shrink-0 rounded-full bg-stone-400" />
+              )}
+              <div className="flex-1 leading-tight">
+                <div className="text-[12px] font-medium text-stone-900">
+                  {step.label}
+                </div>
+                {step.status === "yes" && (
+                  <div className="text-[11px] text-stone-500">Yes</div>
+                )}
+                {step.status === "no" && (
+                  <div className="text-[11px] text-stone-500">No</div>
+                )}
+                {step.status === "value" && step.value && (
+                  <div className="text-[11px] text-stone-500">{step.value}</div>
+                )}
+              </div>
+            </li>
           ))}
-        </dl>
+        </ul>
       </aside>
 
       {/* Main form */}
@@ -86,26 +118,23 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
         {/* Pre-fill banner — matches outcome modal accent style */}
         <div className="mx-6 mb-5 rounded-r-lg border-l-4 border-[#d4a5a5] bg-white py-3 pl-4 pr-5 shadow-sm">
           <p className="text-sm leading-relaxed text-stone-700">
-            <span className="font-semibold text-stone-900">Pre-filled from outcome data.</span>{" "}
-            Based on the outcome submitted on {scenario.submittedOn}.
-            {(disabledRateCount > 0 || disabledServiceCount > 0) && (
-              <span className="text-stone-500">
-                {" "}
-                {disabledRateCount > 0 &&
-                  `${disabledRateCount} rate${disabledRateCount > 1 ? "s" : ""}`}
-                {disabledRateCount > 0 && disabledServiceCount > 0 && " and "}
-                {disabledServiceCount > 0 &&
-                  `${disabledServiceCount} service${disabledServiceCount > 1 ? "s" : ""}`}
-                {" unavailable for this cycle."}
-              </span>
-            )}
+            <span className="font-semibold text-stone-900">
+              Pre-filled from outcome data.
+            </span>{" "}
+            Based on the outcome submitted on {scenario.submittedOn}. Review and
+            edit before submitting.
           </p>
         </div>
 
         <div className="flex-1 space-y-5 px-6 pb-6">
           {/* Treatment dropdown */}
           <div>
-            <label className="text-[13px] font-semibold text-stone-900">Treatment</label>
+            <div className="flex items-center gap-1.5">
+              <label className="text-[13px] font-semibold text-stone-900">
+                Treatment
+              </label>
+              {treatmentPrefilled && <PrefilledHint />}
+            </div>
             <div className="relative mt-1.5">
               <button
                 onClick={() => setDropdownOpen((v) => !v)}
@@ -172,28 +201,24 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
             </div>
           </div>
 
-          {/* Billable services */}
-          {selectedRate && (
+          {/* Billable services — only the available ones */}
+          {selectedRate && visibleServices.length > 0 && (
             <div>
               <label className="text-[13px] font-semibold text-stone-900">
                 Billable Services
               </label>
-              <ul className="mt-2 space-y-1.5">
-                {SERVICES.map((service) => {
-                  const disabled = scenario.prefill.disabledServiceIds.includes(service.id)
+              <ul className="mt-2 space-y-0.5">
+                {visibleServices.map((service) => {
                   const isChecked = checked.has(service.id)
-                  const autoFilled = scenario.prefill.prefilledServiceIds.includes(service.id)
-                  const reason = scenario.prefill.reasonLabels[service.id]
+                  const prefilled = scenario.prefill.prefilledServiceIds.includes(
+                    service.id
+                  )
                   return (
                     <li
                       key={service.id}
-                      className={cn(
-                        "flex items-start gap-3 rounded-lg px-2 py-2",
-                        disabled && "opacity-60"
-                      )}
+                      className="flex items-center gap-3 rounded-lg px-1 py-1.5"
                     >
                       <button
-                        disabled={disabled}
                         onClick={() => {
                           setChecked((prev) => {
                             const next = new Set(prev)
@@ -203,16 +228,14 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                           })
                         }}
                         className={cn(
-                          "mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded border transition-colors",
-                          disabled
-                            ? "cursor-not-allowed border-stone-200 bg-stone-100"
-                            : isChecked
+                          "flex size-[18px] shrink-0 items-center justify-center rounded border transition-colors",
+                          isChecked
                             ? "border-stone-900 bg-stone-900"
                             : "border-stone-300 bg-white hover:border-stone-500"
                         )}
                         aria-label={service.label}
                       >
-                        {isChecked && !disabled && (
+                        {isChecked && (
                           <svg
                             className="size-3 text-white"
                             viewBox="0 0 12 12"
@@ -227,35 +250,9 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                             />
                           </svg>
                         )}
-                        {disabled && (
-                          <LockIcon
-                            className="size-2.5 text-stone-400"
-                            strokeWidth={2.5}
-                          />
-                        )}
                       </button>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              "text-sm",
-                              disabled
-                                ? "text-stone-500 line-through"
-                                : "text-stone-900"
-                            )}
-                          >
-                            {service.label}
-                          </span>
-                          {autoFilled && !disabled && (
-                            <span className="rounded-full bg-[#eef3f0] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#5a7a6e]">
-                              Pre-filled
-                            </span>
-                          )}
-                        </div>
-                        {disabled && reason && (
-                          <p className="mt-0.5 text-[11px] text-stone-500">{reason}</p>
-                        )}
-                      </div>
+                      <span className="text-sm text-stone-900">{service.label}</span>
+                      {prefilled && isChecked && <PrefilledHint />}
                     </li>
                   )
                 })}
@@ -265,7 +262,10 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
 
           {/* Notes */}
           <div>
-            <label className="text-[13px] font-semibold text-stone-900">Notes</label>
+            <label className="text-[13px] font-semibold text-stone-900">
+              Notes{" "}
+              <span className="font-normal text-stone-500">(optional)</span>
+            </label>
             <textarea
               className="mt-1.5 w-full resize-none rounded-lg border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-500 focus:outline-none"
               rows={3}
@@ -285,5 +285,28 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * Subtle pre-fill indicator — small sparkles icon with a tooltip.
+ * Conveys "this was pre-filled from outcome data" without adding the
+ * visual weight of a full pill.
+ */
+function PrefilledHint() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className="inline-flex cursor-help items-center text-[#7a9a8e]"
+          aria-label="Pre-filled from outcome data"
+        >
+          <SparklesIcon className="size-3.5" strokeWidth={2} />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[200px] text-center text-xs">
+        Pre-filled from outcome data
+      </TooltipContent>
+    </Tooltip>
   )
 }

@@ -2,8 +2,10 @@
  * Sample data model for exploring how outcome data can pre-fill
  * the claim submission modal.
  *
- * Each scenario represents outcome data the clinic has already submitted.
- * The `prefill` block describes how the claim modal should react to it.
+ * The outcome step data mirrors what's actually captured by the outcome
+ * modal (see components/outcome-modal-fresh-ivf.tsx). Each scenario
+ * represents outcome data the clinic has already submitted; `prefill`
+ * describes how the claim modal should react to it.
  */
 
 export type TreatmentRate = {
@@ -16,20 +18,19 @@ export type TreatmentRate = {
 export type BillableService = {
   id: string
   label: string
-  /**
-   * What needs to be true in the outcome for this service to be billable.
-   * Used to render the "why is this disabled" copy.
-   */
   requires: "retrieval" | "embryos-stored" | "biopsy" | "none"
 }
 
-export type OutcomeFacts = {
-  retrievalHappened: boolean | null
-  embryosCreated: boolean | null
-  embryosStored?: number
-  biopsyPerformed?: boolean
-  biopsied?: number
-  euploid?: number
+/**
+ * One step from the outcome modal — mirrors the step indicator pattern
+ * so the sidebar reads like "the outcome you submitted, recapped".
+ */
+export type OutcomeStep = {
+  label: string
+  /** "yes" / "no" answer rendered with check/x icon, or a neutral value row */
+  status: "yes" | "no" | "value"
+  /** The recorded value (e.g. "Report received", "5") */
+  value?: string
 }
 
 export type OutcomeScenario = {
@@ -38,8 +39,8 @@ export type OutcomeScenario = {
   summary: string
   submittedOn: string
   treatmentType: string
-  facts: OutcomeFacts
-  factsList: { label: string; value: string }[]
+  authId: string
+  steps: OutcomeStep[]
   prefill: {
     preselectedRateId: string | null
     disabledRateIds: string[]
@@ -89,23 +90,16 @@ export const SCENARIOS: OutcomeScenario[] = [
   {
     id: "full-cycle-biopsy",
     label: "Full cycle with biopsy",
-    summary: "Retrieval, 8 embryos created, 5 biopsied, 3 euploid",
+    summary: "Retrieval completed, embryos created, 5 biopsied / 3 euploid",
     submittedOn: "Dec 10, 2025",
     treatmentType: "IVF Freeze-all",
-    facts: {
-      retrievalHappened: true,
-      embryosCreated: true,
-      embryosStored: 5,
-      biopsyPerformed: true,
-      biopsied: 5,
-      euploid: 3,
-    },
-    factsList: [
-      { label: "Retrieval", value: "Completed" },
-      { label: "Embryos created", value: "Yes (8)" },
-      { label: "Embryos stored", value: "5" },
-      { label: "Biopsied", value: "5" },
-      { label: "Euploid", value: "3" },
+    authId: "AUTH-00142",
+    steps: [
+      { label: "Retrieval", status: "yes" },
+      { label: "Embryos created", status: "yes" },
+      { label: "Genetic testing", status: "value", value: "Report received" },
+      { label: "# Biopsied", status: "value", value: "5" },
+      { label: "# Euploid", status: "value", value: "3" },
     ],
     prefill: {
       preselectedRateId: "ivf-freeze-all",
@@ -114,8 +108,8 @@ export const SCENARIOS: OutcomeScenario[] = [
       disabledServiceIds: [],
       reasonLabels: {
         "cx-monitoring": "Retrieval was completed",
-        "cx-aspiration": "Embryos were created and stored",
-        "cx-pre-transfer": "No transfer stage — this is a freeze-all cycle",
+        "cx-aspiration": "Embryos were created",
+        "cx-pre-transfer": "No transfer stage — freeze-all cycle",
       },
     },
   },
@@ -125,12 +119,9 @@ export const SCENARIOS: OutcomeScenario[] = [
     summary: "Monitoring done, cycle cancelled before retrieval",
     submittedOn: "Dec 14, 2025",
     treatmentType: "IVF Freeze-all",
-    facts: {
-      retrievalHappened: false,
-      embryosCreated: null,
-    },
-    factsList: [
-      { label: "Retrieval", value: "Did not happen" },
+    authId: "AUTH-00151",
+    steps: [
+      { label: "Retrieval", status: "no" },
     ],
     prefill: {
       preselectedRateId: "cx-monitoring",
@@ -155,13 +146,10 @@ export const SCENARIOS: OutcomeScenario[] = [
     summary: "Retrieval done, no viable embryos created",
     submittedOn: "Dec 16, 2025",
     treatmentType: "IVF Freeze-all",
-    facts: {
-      retrievalHappened: true,
-      embryosCreated: false,
-    },
-    factsList: [
-      { label: "Retrieval", value: "Completed" },
-      { label: "Embryos created", value: "No" },
+    authId: "AUTH-00158",
+    steps: [
+      { label: "Retrieval", status: "yes" },
+      { label: "Embryos created", status: "no" },
     ],
     prefill: {
       preselectedRateId: "cx-aspiration",
