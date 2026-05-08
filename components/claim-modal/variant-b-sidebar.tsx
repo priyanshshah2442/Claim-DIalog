@@ -309,7 +309,14 @@ export function VariantBSidebar({
                                 disabled ? "text-stone-300" : "text-stone-400"
                               )}>
                                 {rate.code}
-                            </span>
+                              </span>
+                            )}
+                          </span>
+                          {disabled && (
+                            <LockIcon
+                              className="size-3 shrink-0 text-stone-400"
+                              strokeWidth={2}
+                            />
                           )}
                         </div>
                         {disabled && reason && (
