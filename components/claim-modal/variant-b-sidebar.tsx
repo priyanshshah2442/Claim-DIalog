@@ -445,7 +445,11 @@ export function VariantBSidebar({
                           />
                           {tierSelections[service.id] &&
                             scenario.prefill.servicePrefillTiers?.[service.id] ===
-                              tierSelections[service.id] && <PrefilledHint />}
+                              tierSelections[service.id] && (
+                              <span className="text-[11px] text-stone-400">
+                                (pre-filled)
+                              </span>
+                            )}
                         </div>
                       )}
                     </li>
