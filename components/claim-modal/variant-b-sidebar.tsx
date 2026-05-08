@@ -445,20 +445,15 @@ export function VariantBSidebar({
                             )}
                             {/* Editable stepper — non-locked services, or locked without outcome */}
                             {(!isLocked || !hasOutcome) && (
-                              <div className="flex flex-col gap-1.5">
-                                <span className="text-[12px] text-stone-500">
-                                  Number of {service.unitLabel?.toLowerCase() ?? "units"}
-                                </span>
-                                <QuantityStepper
-                                  value={isLocked ? manualBiopsiedCount : (quantities[service.id] ?? prefillQty ?? 0)}
-                                  onChange={(v) =>
-                                    isLocked
-                                      ? setManualBiopsiedCount(v)
-                                      : setQuantity(service.id, v)
-                                  }
-                                  unitLabel={service.unitLabel ?? ""}
-                                />
-                              </div>
+                              <QuantityStepper
+                                value={isLocked ? manualBiopsiedCount : (quantities[service.id] ?? prefillQty ?? 0)}
+                                onChange={(v) =>
+                                  isLocked
+                                    ? setManualBiopsiedCount(v)
+                                    : setQuantity(service.id, v)
+                                }
+                                unitLabel={service.unitLabel ?? ""}
+                              />
                             )}
                             {resolvedItems.length > 0 ? (
                               <div className="space-y-1.5">
