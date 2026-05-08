@@ -22,6 +22,7 @@ export type TreatmentRate = {
 export type ServiceTier = {
   id: string
   label: string
+  code?: string
   minQty: number
   maxQty: number | null // null = unbounded (for last tier before overage)
   isOverage?: boolean   // true if this is the "per extra embryo" overage line
@@ -54,6 +55,7 @@ export type BillableService = {
 export type ResolvedLineItem = {
   tierId: string
   label: string
+  code?: string
   quantity: number
 }
 
@@ -81,7 +83,7 @@ export function resolveLineItems(
       tier.minQty <= quantity &&
       (tier.maxQty === null || quantity <= tier.maxQty)
     ) {
-      return [{ tierId: tier.id, label: tier.label, quantity: 1 }]
+      return [{ tierId: tier.id, label: tier.label, code: tier.code, quantity: 1 }]
     }
   }
 
@@ -94,8 +96,8 @@ export function resolveLineItems(
     }
     const overageQty = quantity - lastMax
     return [
-      { tierId: lastTier.id, label: lastTier.label, quantity: 1 },
-      { tierId: overage.id, label: overage.label, quantity: overageQty },
+      { tierId: lastTier.id, label: lastTier.label, code: lastTier.code, quantity: 1 },
+      { tierId: overage.id, label: overage.label, code: overage.code, quantity: overageQty },
     ]
   }
 
@@ -202,14 +204,13 @@ export const SERVICES: BillableService[] = [
   {
     id: "pgt",
     label: "PGT Biopsy",
-    code: "89290",
     requires: "biopsy",
     kind: "tiered-quantity",
     unitLabel: "Embryos",
     tiers: [
-      { id: "biopsy-1-5", label: "Biopsy 1 to 5", minQty: 1, maxQty: 5 },
-      { id: "biopsy-6-10", label: "Biopsy 6 to 10", minQty: 6, maxQty: 10 },
-      { id: "biopsy-overage", label: "Overage per embryo (11+)", minQty: 11, maxQty: null, isOverage: true },
+      { id: "biopsy-1-5", label: "Biopsy 1 to 5", code: "89290", minQty: 1, maxQty: 5 },
+      { id: "biopsy-6-10", label: "Biopsy 6 to 10", code: "89291", minQty: 6, maxQty: 10 },
+      { id: "biopsy-overage", label: "Overage per embryo (11+)", code: "89292", minQty: 11, maxQty: null, isOverage: true },
     ],
   },
   { id: "hatching", label: "Assisted hatching", code: "89253", requires: "embryos-stored", kind: "flat" },

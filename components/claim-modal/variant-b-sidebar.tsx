@@ -343,7 +343,7 @@ export function VariantBSidebar({
                         />
                         <span className="text-sm text-stone-900">
                           {service.label}
-                          {service.code && (
+                          {service.code && service.kind !== "tiered-quantity" && (
                             <span className="ml-2 text-[11px] text-stone-400">
                               {service.code}
                             </span>
@@ -409,10 +409,15 @@ export function VariantBSidebar({
                               {resolvedPgt.map((item) => (
                                 <div
                                   key={item.tierId}
-                                  className="flex items-center gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2"
+                                  className="flex items-center justify-between gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2"
                                 >
                                   <span className="text-[13px] text-stone-900">
                                     {item.label}
+                                    {item.code && (
+                                      <span className="ml-2 text-[11px] text-stone-400">
+                                        {item.code}
+                                      </span>
+                                    )}
                                   </span>
                                   <span className="text-[12px] text-stone-500">
                                     × {item.quantity}
