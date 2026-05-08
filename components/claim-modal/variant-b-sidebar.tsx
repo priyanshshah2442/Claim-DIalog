@@ -220,9 +220,9 @@ export function VariantBSidebar({
           <div className="mx-6 mb-5 rounded-r-lg border-l-4 border-amber-400 bg-amber-50 py-3 pl-4 pr-5 shadow-sm">
             <p className="text-sm leading-relaxed text-stone-700">
               <span className="font-semibold text-stone-900">
-                Could not pre-fill — outcome data is missing.
+                Could not pre-fill — no outcome data.
               </span>{" "}
-              Submit the outcome for this cycle first to enable automatic pre-filling of the rate and services.
+              Submit the outcome for this cycle to enable automatic pre-filling of the rate and services, or manually fill in the claim.
             </p>
           </div>
         )}
