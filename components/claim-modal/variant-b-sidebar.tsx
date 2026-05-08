@@ -359,18 +359,6 @@ export function VariantBSidebar({
                             </span>
                           )}
                         </span>
-                        {isChecked && service.quantityLocked && hasOutcome && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="flex cursor-help items-center text-stone-400">
-                                <LockIcon className="size-3.5" strokeWidth={2} />
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-[200px] text-center text-xs">
-                              Locked to outcome data. Update the outcome to adjust this value.
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
                       </div>
 
                       {/* Per-unit stepper (legacy) */}
@@ -424,32 +412,28 @@ export function VariantBSidebar({
                           <div className="ml-[30px] flex flex-col items-start gap-2">
                             {/* Locked display — outcome data, not editable */}
                             {isLocked && hasOutcome && (
-                              <div className="flex items-center gap-2">
-                                <div className="inline-flex items-center overflow-hidden rounded-md border border-stone-300 bg-white">
-                                  <button
-                                    disabled
-                                    className="flex size-6 items-center justify-center text-stone-300 cursor-not-allowed"
-                                    aria-label="Decrease (disabled)"
-                                  >
-                                    <MinusIcon className="size-3" strokeWidth={2.5} />
-                                  </button>
-                                  <span className="w-8 border-x border-stone-300 py-1 text-center text-[12px] font-medium text-stone-900">
-                                    {effectiveBiopsiedCount}
-                                  </span>
-                                  <button
-                                    disabled
-                                    className="flex size-6 items-center justify-center text-stone-300 cursor-not-allowed"
-                                    aria-label="Increase (disabled)"
-                                  >
-                                    <PlusIcon className="size-3" strokeWidth={2.5} />
-                                  </button>
-                                </div>
-                                <span className="text-[13px] text-stone-400">
-                                  {service.unitLabel}
+                              <div className="inline-flex items-center overflow-hidden rounded-lg border border-stone-300 bg-white">
+                                <button
+                                  disabled
+                                  className="flex size-8 items-center justify-center text-stone-300 cursor-not-allowed"
+                                  aria-label="Decrease (disabled)"
+                                >
+                                  <MinusIcon className="size-3.5" strokeWidth={2.5} />
+                                </button>
+                                <span className="w-10 border-x border-stone-300 py-1.5 text-center text-sm font-medium text-stone-900">
+                                  {effectiveBiopsiedCount}
                                 </span>
+                                <button
+                                  disabled
+                                  className="flex size-8 items-center justify-center text-stone-300 cursor-not-allowed"
+                                  aria-label="Increase (disabled)"
+                                >
+                                  <PlusIcon className="size-3.5" strokeWidth={2.5} />
+                                </button>
+                                <span className="px-3 text-sm text-stone-500">{service.unitLabel}</span>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="flex cursor-help items-center text-stone-400">
+                                    <span className="flex cursor-help items-center pr-3 text-stone-400">
                                       <LockIcon className="size-3.5" strokeWidth={2} />
                                     </span>
                                   </TooltipTrigger>
