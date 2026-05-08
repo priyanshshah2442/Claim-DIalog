@@ -1,20 +1,11 @@
-"use client"
+import { redirect } from "next/navigation"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { OutcomeModalOptionA } from "@/components/outcome-modal-option-a"
-import { OutcomeModalTransfer } from "@/components/outcome-modal-transfer"
-import { OutcomeModalEggFreezing } from "@/components/outcome-modal-egg-freezing"
-import { OutcomeModalFreshIVF } from "@/components/outcome-modal-fresh-ivf"
-import { OutcomeModalBanking } from "@/components/outcome-modal-banking"
+export default function Home() {
+  redirect("/claim-modal-options")
+}
 
-export default function OutcomeModalDemo() {
-  const [openRetrieval, setOpenRetrieval] = useState(false)
-  const [openTransfer, setOpenTransfer] = useState(false)
-  const [openEggFreezing, setOpenEggFreezing] = useState(false)
-  const [openFreshIVF, setOpenFreshIVF] = useState(false)
-  const [openBanking, setOpenBanking] = useState(false)
-
+// Keeping original exports below so the old page remains reachable at /banner-options.
+function _OriginalOutcomeModalDemo() {
   return (
     <div className="min-h-screen bg-muted/30 p-8">
       <div className="mx-auto max-w-4xl space-y-8">
