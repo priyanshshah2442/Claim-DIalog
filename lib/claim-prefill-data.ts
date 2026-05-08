@@ -11,9 +11,12 @@
 export type TreatmentRate = {
   id: string
   label: string
-  code?: string  // CPT/billing code (e.g. "58970")
+  code?: string
   kind: "main" | "cancellation"
-  stage: "pre-retrieval" | "post-retrieval" | "pre-transfer"
+  /** Coverage flags from the procedure code table */
+  coversRetrieval: boolean
+  coversEmbryosCreation: boolean
+  coversTransfer: boolean
 }
 
 /**
@@ -161,35 +164,45 @@ export const RATES: TreatmentRate[] = [
     label: "IVF Freeze-all",
     code: "S4016",
     kind: "main",
-    stage: "post-retrieval",
+    coversRetrieval: true,
+    coversEmbryosCreation: true,
+    coversTransfer: false,
   },
   {
-    id: "cx-monitoring",
-    label: "Cycle cancelled pre 4 days of monitoring",
-    code: "S4020-52",
-    kind: "cancellation",
-    stage: "pre-retrieval",
-  },
-  {
-    id: "cx-stimulation",
-    label: "Cycle canceled post stimulation and/or monitoring",
-    code: "S4020",
-    kind: "cancellation",
-    stage: "pre-retrieval",
-  },
-  {
-    id: "cx-aspiration",
-    label: "Cycle canceled post retrieval",
-    code: "S4021",
-    kind: "cancellation",
-    stage: "post-retrieval",
-  },
-  {
-    id: "cx-pre-transfer",
+    id: "cx-post-fertilization",
     label: "Cycle canceled post fertilization",
     code: "S4021-22",
     kind: "cancellation",
-    stage: "pre-transfer",
+    coversRetrieval: true,
+    coversEmbryosCreation: true,
+    coversTransfer: false,
+  },
+  {
+    id: "cx-post-retrieval",
+    label: "Cycle canceled post retrieval",
+    code: "S4021",
+    kind: "cancellation",
+    coversRetrieval: true,
+    coversEmbryosCreation: false,
+    coversTransfer: false,
+  },
+  {
+    id: "cx-post-stimulation",
+    label: "Cycle canceled post stimulation and/or monitoring",
+    code: "S4020",
+    kind: "cancellation",
+    coversRetrieval: false,
+    coversEmbryosCreation: false,
+    coversTransfer: false,
+  },
+  {
+    id: "cx-pre-monitoring",
+    label: "Cycle cancelled pre 4 days of monitoring",
+    code: "S4020-52",
+    kind: "cancellation",
+    coversRetrieval: false,
+    coversEmbryosCreation: false,
+    coversTransfer: false,
   },
 ]
 
@@ -241,7 +254,9 @@ export const SCENARIOS: OutcomeScenario[] = [
     ],
     prefill: {
       preselectedRateId: "ivf-freeze-all",
-      disabledRateIds: ["cx-monitoring", "cx-aspiration", "cx-pre-transfer"],
+      // Retrieval=yes, Embryos=yes → only rates that cover both are valid (S4016, S4021-22)
+      // Rates that don't cover embryos creation are disabled
+      disabledRateIds: ["cx-post-retrieval", "cx-post-stimulation", "cx-pre-monitoring"],
       prefilledServiceIds: ["anaesthesia", "icsi", "pgt", "storage"],
       disabledServiceIds: [],
       servicePrefillQuantities: {
@@ -251,9 +266,9 @@ export const SCENARIOS: OutcomeScenario[] = [
         storage: "12m",
       },
       reasonLabels: {
-        "cx-monitoring": "Retrieval was completed",
-        "cx-aspiration": "Embryos were created",
-        "cx-pre-transfer": "No transfer stage — freeze-all cycle",
+        "cx-post-retrieval": "Embryos were created",
+        "cx-post-stimulation": "Retrieval was completed",
+        "cx-pre-monitoring": "Retrieval was completed",
       },
     },
   },
@@ -267,14 +282,15 @@ export const SCENARIOS: OutcomeScenario[] = [
     authId: "AUTH-00151",
     steps: [{ label: "Retrieval", status: "no" }],
     prefill: {
-      preselectedRateId: "cx-monitoring",
-      disabledRateIds: ["ivf-freeze-all", "cx-aspiration", "cx-pre-transfer"],
+      // Retrieval=no → only rates that don't cover retrieval are valid (S4020, S4020-52)
+      preselectedRateId: "cx-post-stimulation",
+      disabledRateIds: ["ivf-freeze-all", "cx-post-fertilization", "cx-post-retrieval"],
       prefilledServiceIds: [],
       disabledServiceIds: ["anaesthesia", "icsi", "storage", "pgt", "hatching"],
       reasonLabels: {
         "ivf-freeze-all": "Retrieval did not happen",
-        "cx-aspiration": "Requires a completed aspiration",
-        "cx-pre-transfer": "Not applicable — no transfer stage reached",
+        "cx-post-fertilization": "Retrieval did not happen",
+        "cx-post-retrieval": "Retrieval did not happen",
       },
     },
   },
@@ -291,14 +307,16 @@ export const SCENARIOS: OutcomeScenario[] = [
       { label: "Embryos created", status: "no" },
     ],
     prefill: {
-      preselectedRateId: "cx-aspiration",
-      disabledRateIds: ["ivf-freeze-all", "cx-monitoring", "cx-pre-transfer"],
+      // Retrieval=yes, Embryos=no → only rates that cover retrieval but not embryos (S4021)
+      preselectedRateId: "cx-post-retrieval",
+      disabledRateIds: ["ivf-freeze-all", "cx-post-fertilization", "cx-post-stimulation", "cx-pre-monitoring"],
       prefilledServiceIds: ["anaesthesia", "icsi"],
       disabledServiceIds: ["storage", "pgt", "hatching"],
       reasonLabels: {
         "ivf-freeze-all": "No embryos were created",
-        "cx-monitoring": "Retrieval was completed",
-        "cx-pre-transfer": "Not applicable — no transfer stage reached",
+        "cx-post-fertilization": "No embryos were created",
+        "cx-post-stimulation": "Retrieval was completed",
+        "cx-pre-monitoring": "Retrieval was completed",
       },
     },
   },
