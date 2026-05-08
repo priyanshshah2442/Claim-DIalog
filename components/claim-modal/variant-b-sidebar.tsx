@@ -100,27 +100,18 @@ export function VariantBSidebar({
       <aside className="flex w-[280px] shrink-0 flex-col gap-4 border-r border-stone-200 bg-[#f8f5f2] px-5 py-5">
         {hasOutcome ? (
           <>
-                        <div className="flex items-start justify-between gap-2">
-                          <span
-                            className={cn(
-                              "text-[13px]",
-                              disabled ? "text-stone-400" : "text-stone-900"
-                            )}
-                          >
-                            {rate.label}
-                            {rate.code && (
-                              <span className="ml-2 text-[11px] text-stone-400">
-                                {rate.code}
-                              </span>
-                            )}
-                          </span>
-                          {disabled && (
-                            <LockIcon
-                              className="size-3 shrink-0 text-stone-400"
-                              strokeWidth={2}
-                            />
-                          )}
-                        </div>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+                  Outcome Submitted
+                </p>
+                <p className="mt-1 font-serif text-[15px] font-semibold text-stone-900">
+                  {scenario.treatmentType}
+                </p>
+                <p className="mt-0.5 text-[12px] text-stone-500">
+                  {scenario.authId} · {scenario.submittedOn}
+                </p>
+              </div>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -303,6 +294,14 @@ export function VariantBSidebar({
                             )}
                           >
                             {rate.label}
+                            {rate.code && (
+                              <span className={cn(
+                                "ml-2 text-[11px]",
+                                disabled ? "text-stone-300" : "text-stone-400"
+                              )}>
+                                {rate.code}
+                              </span>
+                            )}
                           </span>
                           {disabled && (
                             <LockIcon
