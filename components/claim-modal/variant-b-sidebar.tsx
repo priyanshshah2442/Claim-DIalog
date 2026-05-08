@@ -359,6 +359,18 @@ export function VariantBSidebar({
                             </span>
                           )}
                         </span>
+                        {isChecked && service.quantityLocked && hasOutcome && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="flex cursor-help items-center text-stone-400">
+                                <LockIcon className="size-3.5" strokeWidth={2} />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-[200px] text-center text-xs">
+                              Locked to outcome data. Update the outcome to adjust this value.
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                       </div>
 
                       {/* Per-unit stepper (legacy) */}
@@ -412,25 +424,13 @@ export function VariantBSidebar({
                           <div className="ml-[30px] flex flex-col items-start gap-2">
                             {/* Locked display — outcome data, not editable */}
                             {isLocked && hasOutcome && (
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1.5 rounded-md border border-stone-200 bg-stone-50 px-3 py-2">
-                                  <span className="text-[13px] font-medium text-stone-900">
-                                    {effectiveBiopsiedCount}
-                                  </span>
-                                  <span className="text-[13px] text-stone-400">
-                                    {service.unitLabel}
-                                  </span>
-                                </div>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="flex cursor-help items-center text-stone-400">
-                                      <LockIcon className="size-3.5" strokeWidth={2} />
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="max-w-[200px] text-center text-xs">
-                                    Locked to outcome data. Update the outcome to adjust this value.
-                                  </TooltipContent>
-                                </Tooltip>
+                              <div className="flex items-center gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2">
+                                <span className="text-[13px] font-medium text-stone-900">
+                                  {effectiveBiopsiedCount}
+                                </span>
+                                <span className="text-[13px] text-stone-400">
+                                  {service.unitLabel}
+                                </span>
                               </div>
                             )}
                             {/* Editable stepper — non-locked services, or locked without outcome */}
