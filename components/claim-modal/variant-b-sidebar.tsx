@@ -11,21 +11,23 @@ import {
   PlusIcon,
   AlertTriangleIcon,
 } from "lucide-react"
-import { RATES, SERVICES, type OutcomeScenario } from "@/lib/claim-prefill-data"
+import {
+  RATES,
+  SERVICES,
+  resolveLineItems,
+  type OutcomeScenario,
+  type ResolvedLineItem,
+} from "@/lib/claim-prefill-data"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 /**
- * Variant B (refined v4) — Outcome sidebar + pre-fill banner with
- * support for per-unit and tiered billable services.
+ * Variant B (refined v5) — Outcome sidebar + pre-fill banner with
+ * support for flat, per-unit, tiered, and tiered-quantity billable services.
  *
- * - Flat services: checkbox only.
- * - Per-unit services (e.g. "PGT Biopsy per embryo"): checkbox +
- *   numeric stepper. When the outcome data provides a count (e.g.
- *   # biopsied), both the checkbox and the quantity are pre-filled.
- * - Tiered services (e.g. "Embryo storage — 6/12/24 months"): checkbox
- *   + option dropdown. These are NEVER pre-filled — the clinic must
- *   explicitly opt in and pick the tier.
+ * tiered-quantity services (e.g. PGT Biopsy) are resolved to line items
+ * based on the quantity from outcome data (# biopsied), which can be
+ * edited in the sidebar to see how different quantities resolve.
  */
 export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
   const [rateId, setRateId] = useState<string | null>(scenario.prefill.preselectedRateId)
@@ -40,11 +42,16 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
   )
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
+  // Editable # biopsied in sidebar — starts from outcome data
+  const initialBiopsied = scenario.prefill.servicePrefillQuantities?.pgt ?? 0
+  const [biopsiedCount, setBiopsiedCount] = useState(initialBiopsied)
+
   useEffect(() => {
     setRateId(scenario.prefill.preselectedRateId)
     setChecked(new Set(scenario.prefill.prefilledServiceIds))
     setQuantities(scenario.prefill.servicePrefillQuantities ?? {})
     setTierSelections(scenario.prefill.servicePrefillTiers ?? {})
+    setBiopsiedCount(scenario.prefill.servicePrefillQuantities?.pgt ?? 0)
   }, [
     scenario.id,
     scenario.prefill.preselectedRateId,
@@ -73,10 +80,23 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
   const setQuantity = (id: string, value: number) =>
     setQuantities((prev) => ({ ...prev, [id]: Math.max(0, value) }))
 
+  // Resolve PGT biopsy to line items based on biopsiedCount
+  const pgtService = SERVICES.find((s) => s.id === "pgt")
+  const resolvedPgt: ResolvedLineItem[] = useMemo(() => {
+    if (!pgtService || pgtService.kind !== "tiered-quantity" || biopsiedCount <= 0) {
+      return []
+    }
+    try {
+      return resolveLineItems(pgtService, biopsiedCount)
+    } catch {
+      return []
+    }
+  }, [pgtService, biopsiedCount])
+
   return (
     <div className="flex h-full w-full bg-white">
       {/* Sidebar — recap of the submitted outcome */}
-      <aside className="flex w-[260px] shrink-0 flex-col gap-4 border-r border-stone-200 bg-[#f8f5f2] px-5 py-5">
+      <aside className="flex w-[280px] shrink-0 flex-col gap-4 border-r border-stone-200 bg-[#f8f5f2] px-5 py-5">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
             Outcome Submitted
@@ -92,40 +112,81 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
         <div className="h-px bg-stone-200" />
 
         <ul className="space-y-2.5">
-          {scenario.steps.map((step) => (
-            <li key={step.label} className="flex items-start gap-2.5">
-              {step.status === "yes" && (
-                <CheckCircle2Icon
-                  className="mt-0.5 size-4 shrink-0 text-[#7a9a8e]"
-                  strokeWidth={2}
-                />
-              )}
-              {step.status === "no" && (
-                <XCircleIcon
-                  className="mt-0.5 size-4 shrink-0 text-stone-400"
-                  strokeWidth={2}
-                />
-              )}
-              {step.status === "value" && (
-                <span className="mt-1 block size-1.5 shrink-0 rounded-full bg-stone-400" />
-              )}
-              <div className="flex-1 leading-tight">
-                <div className="text-[12px] font-medium text-stone-900">
-                  {step.label}
-                </div>
+          {scenario.steps.map((step) => {
+            // Make # Biopsied editable
+            const isBiopsiedStep = step.label === "# Biopsied"
+            return (
+              <li key={step.label} className="flex items-start gap-2.5">
                 {step.status === "yes" && (
-                  <div className="text-[11px] text-stone-500">Yes</div>
+                  <CheckCircle2Icon
+                    className="mt-0.5 size-4 shrink-0 text-[#7a9a8e]"
+                    strokeWidth={2}
+                  />
                 )}
                 {step.status === "no" && (
-                  <div className="text-[11px] text-stone-500">No</div>
+                  <XCircleIcon
+                    className="mt-0.5 size-4 shrink-0 text-stone-400"
+                    strokeWidth={2}
+                  />
                 )}
-                {step.status === "value" && step.value && (
-                  <div className="text-[11px] text-stone-500">{step.value}</div>
+                {step.status === "value" && (
+                  <span className="mt-1 block size-1.5 shrink-0 rounded-full bg-stone-400" />
                 )}
-              </div>
-            </li>
-          ))}
+                <div className="flex-1 leading-tight">
+                  <div className="text-[12px] font-medium text-stone-900">
+                    {step.label}
+                  </div>
+                  {step.status === "yes" && (
+                    <div className="text-[11px] text-stone-500">Yes</div>
+                  )}
+                  {step.status === "no" && (
+                    <div className="text-[11px] text-stone-500">No</div>
+                  )}
+                  {step.status === "value" && !isBiopsiedStep && step.value && (
+                    <div className="text-[11px] text-stone-500">{step.value}</div>
+                  )}
+                  {isBiopsiedStep && (
+                    <div className="mt-1.5">
+                      <SmallStepper
+                        value={biopsiedCount}
+                        onChange={setBiopsiedCount}
+                      />
+                    </div>
+                  )}
+                </div>
+              </li>
+            )
+          })}
         </ul>
+
+        {/* Show resolved line items when biopsied > 0 */}
+        {biopsiedCount > 0 && resolvedPgt.length > 0 && (
+          <>
+            <div className="h-px bg-stone-200" />
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+                Resolved Biopsy Items
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {resolvedPgt.map((item) => (
+                  <li
+                    key={item.tierId}
+                    className="rounded-md border border-stone-200 bg-white px-3 py-2"
+                  >
+                    <div className="text-[12px] font-medium text-stone-900">
+                      {item.label}
+                    </div>
+                    {item.quantity > 1 && (
+                      <div className="text-[11px] text-stone-500">
+                        × {item.quantity} embryos
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
       </aside>
 
       {/* Main form */}
@@ -254,7 +315,7 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                         {prefilled && isChecked && <PrefilledHint />}
                       </div>
 
-                      {/* Per-unit stepper */}
+                      {/* Per-unit stepper (legacy) */}
                       {isChecked && service.kind === "per-unit" && (() => {
                         const prefillQty =
                           scenario.prefill.servicePrefillQuantities?.[service.id]
@@ -291,9 +352,44 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                         )
                       })()}
 
-                      {/* Tiered option select */}
+                      {/* Tiered-quantity resolved items */}
+                      {isChecked && service.kind === "tiered-quantity" && service.id === "pgt" && (
+                        <div className="ml-[30px] flex flex-col items-start gap-2">
+                          {resolvedPgt.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {resolvedPgt.map((item) => (
+                                <div
+                                  key={item.tierId}
+                                  className="flex items-center gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2"
+                                >
+                                  <span className="text-[13px] text-stone-900">
+                                    {item.label}
+                                  </span>
+                                  {item.quantity > 1 && (
+                                    <span className="text-[12px] text-stone-500">
+                                      × {item.quantity}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                              <p className="text-[11px] text-stone-500">
+                                Based on {biopsiedCount} embryos biopsied.{" "}
+                                <span className="text-stone-400">
+                                  Adjust in sidebar to see changes.
+                                </span>
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-[12px] text-stone-500">
+                              Set # biopsied in sidebar to resolve line items.
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Tiered option select (storage) */}
                       {isChecked && service.kind === "tiered" && service.options && (
-                        <div className="ml-[30px]">
+                        <div className="ml-[30px] flex items-center gap-2">
                           <TierSelect
                             options={service.options}
                             value={tierSelections[service.id]}
@@ -301,6 +397,9 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                               setTierSelections((prev) => ({ ...prev, [service.id]: v }))
                             }
                           />
+                          {tierSelections[service.id] &&
+                            scenario.prefill.servicePrefillTiers?.[service.id] ===
+                              tierSelections[service.id] && <PrefilledHint />}
                         </div>
                       )}
                     </li>
@@ -339,7 +438,7 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
 }
 
 /**
- * Subtle pre-fill indicator — small sparkles icon with a tooltip.
+ * Subtle pre-fill indicator — small wand icon with a tooltip.
  * Conveys "this was pre-filled from outcome data" without adding the
  * visual weight of a full pill.
  */
@@ -431,6 +530,43 @@ function QuantityStepper({
         <PlusIcon className="size-3.5" strokeWidth={2.5} />
       </button>
       <span className="px-3 text-sm text-stone-500">{unitLabel}</span>
+    </div>
+  )
+}
+
+/**
+ * Small stepper for sidebar — compact variant without unit label.
+ */
+function SmallStepper({
+  value,
+  onChange,
+}: {
+  value: number
+  onChange: (v: number) => void
+}) {
+  return (
+    <div className="inline-flex items-center overflow-hidden rounded-md border border-stone-300 bg-white">
+      <button
+        onClick={() => onChange(Math.max(0, value - 1))}
+        disabled={value <= 0}
+        className="flex size-6 items-center justify-center text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-300"
+        aria-label="Decrease"
+      >
+        <MinusIcon className="size-3" strokeWidth={2.5} />
+      </button>
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
+        className="w-8 border-x border-stone-300 py-1 text-center text-[12px] font-medium text-stone-900 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+      <button
+        onClick={() => onChange(value + 1)}
+        className="flex size-6 items-center justify-center text-stone-600 hover:bg-stone-50"
+        aria-label="Increase"
+      >
+        <PlusIcon className="size-3" strokeWidth={2.5} />
+      </button>
     </div>
   )
 }

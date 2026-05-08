@@ -15,20 +15,89 @@ export type TreatmentRate = {
   stage: "pre-retrieval" | "post-retrieval" | "pre-transfer"
 }
 
+/**
+ * A tier within a tiered-quantity billable service (e.g. biopsy bands).
+ */
+export type ServiceTier = {
+  id: string
+  label: string
+  minQty: number
+  maxQty: number | null // null = unbounded (for last tier before overage)
+  isOverage?: boolean   // true if this is the "per extra embryo" overage line
+}
+
 export type BillableService = {
   id: string
   label: string
   requires: "retrieval" | "embryos-stored" | "biopsy" | "none"
   /**
-   * "flat"      — simple checkbox only
-   * "per-unit"  — checkbox + numeric stepper (e.g. "PGT Biopsy per embryo")
-   * "tiered"    — checkbox + option dropdown (e.g. "Embryo storage — 6 / 12 / 24 months")
+   * "flat"           — simple checkbox only
+   * "per-unit"       — checkbox + numeric stepper (e.g. legacy "PGT Biopsy per embryo")
+   * "tiered"         — checkbox + option dropdown (e.g. "Embryo storage — 6 / 12 / 24 months")
+   * "tiered-quantity"— resolved by quantity into 1+ line items using tiers (e.g. Biopsy 1-5, 6-10, overage)
    */
-  kind: "flat" | "per-unit" | "tiered"
+  kind: "flat" | "per-unit" | "tiered" | "tiered-quantity"
   /** Label beside the numeric stepper for per-unit services (e.g. "Embryos") */
   unitLabel?: string
-  /** Options for tiered services */
+  /** Options for tiered services (storage durations, etc.) */
   options?: { id: string; label: string }[]
+  /** Tiers for tiered-quantity services (biopsy bands, etc.) */
+  tiers?: ServiceTier[]
+}
+
+/**
+ * A resolved line item from tiered-quantity resolution.
+ * Similar to production's ResolvedLineItem.
+ */
+export type ResolvedLineItem = {
+  tierId: string
+  label: string
+  quantity: number
+}
+
+/**
+ * Resolve a tiered-quantity service to line items based on quantity.
+ * Mirrors production's resolve_line_items logic.
+ */
+export function resolveLineItems(
+  service: BillableService,
+  quantity: number
+): ResolvedLineItem[] {
+  if (service.kind !== "tiered-quantity" || !service.tiers) {
+    throw new Error("resolveLineItems only works on tiered-quantity services")
+  }
+  if (quantity <= 0) return []
+
+  const tiers = service.tiers
+    .filter((t) => !t.isOverage)
+    .sort((a, b) => a.minQty - b.minQty)
+  const overage = service.tiers.find((t) => t.isOverage)
+
+  // Find the matching tier
+  for (const tier of tiers) {
+    if (
+      tier.minQty <= quantity &&
+      (tier.maxQty === null || quantity <= tier.maxQty)
+    ) {
+      return [{ tierId: tier.id, label: tier.label, quantity: 1 }]
+    }
+  }
+
+  // Quantity exceeds all tiers — use last tier + overage
+  if (overage && tiers.length > 0) {
+    const lastTier = tiers[tiers.length - 1]
+    const lastMax = lastTier.maxQty
+    if (lastMax === null) {
+      throw new Error("Cannot compute overage: last tier has no max quantity")
+    }
+    const overageQty = quantity - lastMax
+    return [
+      { tierId: lastTier.id, label: lastTier.label, quantity: 1 },
+      { tierId: overage.id, label: overage.label, quantity: overageQty },
+    ]
+  }
+
+  throw new Error(`Quantity ${quantity} out of range for ${service.id}`)
 }
 
 /**
@@ -123,10 +192,15 @@ export const SERVICES: BillableService[] = [
   },
   {
     id: "pgt",
-    label: "PGT Biopsy per embryo",
+    label: "PGT Biopsy",
     requires: "biopsy",
-    kind: "per-unit",
+    kind: "tiered-quantity",
     unitLabel: "Embryos",
+    tiers: [
+      { id: "biopsy-1-5", label: "Biopsy 1 to 5", minQty: 1, maxQty: 5 },
+      { id: "biopsy-6-10", label: "Biopsy 6 to 10", minQty: 6, maxQty: 10 },
+      { id: "biopsy-overage", label: "Overage per embryo (11+)", minQty: 11, maxQty: null, isOverage: true },
+    ],
   },
   { id: "hatching", label: "Assisted hatching", requires: "embryos-stored", kind: "flat" },
 ]
