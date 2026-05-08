@@ -416,9 +416,6 @@ export function VariantBSidebar({
                                 {!isLocked && (
                                   <span className="text-[12px] text-stone-500">
                                     Number of {service.unitLabel?.toLowerCase() ?? "units"}
-                                    {hasOutcome && prefillQty !== undefined && (
-                                      <span className="ml-1.5 text-stone-400">(pre-filled from outcome)</span>
-                                    )}
                                   </span>
                                 )}
                                 {isLocked && !hasOutcome && (
@@ -481,11 +478,7 @@ export function VariantBSidebar({
                           />
                           {tierSelections[service.id] &&
                             scenario.prefill.servicePrefillTiers?.[service.id] ===
-                              tierSelections[service.id] && (
-                              <span className="text-[11px] text-stone-400">
-                                (pre-filled)
-                              </span>
-                            )}
+                              tierSelections[service.id] && null}
                         </div>
                       )}
                     </li>
