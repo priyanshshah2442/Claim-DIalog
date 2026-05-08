@@ -11,6 +11,7 @@ import {
   PlusIcon,
   AlertTriangleIcon,
   PencilIcon,
+  ClipboardListIcon,
 } from "lucide-react"
 import {
   RATES,
@@ -87,77 +88,109 @@ export function VariantBSidebar({
     }
   }, [pgtService, biopsiedCount])
 
+  const hasOutcome = scenario.hasOutcome
+
   return (
     <div className="flex h-full w-full bg-white">
       {/* Sidebar — recap of the submitted outcome */}
       <aside className="flex w-[280px] shrink-0 flex-col gap-4 border-r border-stone-200 bg-[#f8f5f2] px-5 py-5">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-              Outcome Submitted
-            </p>
-            <p className="mt-1 font-serif text-[15px] font-semibold text-stone-900">
-              {scenario.treatmentType}
-            </p>
-            <p className="mt-0.5 text-[12px] text-stone-500">
-              {scenario.authId} · {scenario.submittedOn}
-            </p>
-          </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900"
-                aria-label="Update outcome data"
-              >
-                <PencilIcon className="size-3" strokeWidth={2} />
-                Update
-              </button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-[200px] text-center text-xs">
-              Opens the outcome modal to update submitted data
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        <div className="h-px bg-stone-200" />
-
-        <ul className="space-y-2.5">
-          {scenario.steps.map((step) => (
-            <li key={step.label} className="flex items-start gap-2.5">
-              {step.status === "yes" && (
-                <CheckCircle2Icon
-                  className="mt-0.5 size-4 shrink-0 text-[#7a9a8e]"
-                  strokeWidth={2}
-                />
-              )}
-              {step.status === "no" && (
-                <XCircleIcon
-                  className="mt-0.5 size-4 shrink-0 text-stone-400"
-                  strokeWidth={2}
-                />
-              )}
-              {step.status === "value" && (
-                <span className="mt-1 block size-1.5 shrink-0 rounded-full bg-stone-400" />
-              )}
-              <div className="flex-1 leading-tight">
-                <div className="text-[12px] font-medium text-stone-900">
-                  {step.label}
-                </div>
-                {step.status === "yes" && (
-                  <div className="text-[11px] text-stone-500">Yes</div>
-                )}
-                {step.status === "no" && (
-                  <div className="text-[11px] text-stone-500">No</div>
-                )}
-                {step.status === "value" && step.value && (
-                  <div className="text-[11px] text-stone-500">
-                    {step.label === "# Biopsied" ? biopsiedCount : step.value}
-                  </div>
-                )}
+        {hasOutcome ? (
+          <>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+                  Outcome Submitted
+                </p>
+                <p className="mt-1 font-serif text-[15px] font-semibold text-stone-900">
+                  {scenario.treatmentType}
+                </p>
+                <p className="mt-0.5 text-[12px] text-stone-500">
+                  {scenario.authId} · {scenario.submittedOn}
+                </p>
               </div>
-            </li>
-          ))}
-        </ul>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+                    aria-label="Update outcome data"
+                  >
+                    <PencilIcon className="size-3" strokeWidth={2} />
+                    Update
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[200px] text-center text-xs">
+                  Opens the outcome modal to update submitted data
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            <div className="h-px bg-stone-200" />
+
+            <ul className="space-y-2.5">
+              {scenario.steps.map((step) => (
+                <li key={step.label} className="flex items-start gap-2.5">
+                  {step.status === "yes" && (
+                    <CheckCircle2Icon
+                      className="mt-0.5 size-4 shrink-0 text-[#7a9a8e]"
+                      strokeWidth={2}
+                    />
+                  )}
+                  {step.status === "no" && (
+                    <XCircleIcon
+                      className="mt-0.5 size-4 shrink-0 text-stone-400"
+                      strokeWidth={2}
+                    />
+                  )}
+                  {step.status === "value" && (
+                    <span className="mt-1 block size-1.5 shrink-0 rounded-full bg-stone-400" />
+                  )}
+                  <div className="flex-1 leading-tight">
+                    <div className="text-[12px] font-medium text-stone-900">
+                      {step.label}
+                    </div>
+                    {step.status === "yes" && (
+                      <div className="text-[11px] text-stone-500">Yes</div>
+                    )}
+                    {step.status === "no" && (
+                      <div className="text-[11px] text-stone-500">No</div>
+                    )}
+                    {step.status === "value" && step.value && (
+                      <div className="text-[11px] text-stone-500">
+                        {step.label === "# Biopsied" ? biopsiedCount : step.value}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          /* No outcome submitted yet */
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+            <div className="flex size-10 items-center justify-center rounded-full bg-stone-100">
+              <ClipboardListIcon className="size-5 text-stone-400" strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-stone-900">
+                No outcome submitted
+              </p>
+              <p className="mt-1 text-[12px] leading-relaxed text-stone-500">
+                Submit the outcome for {scenario.authId} to enable pre-filling.
+              </p>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-[12px] font-medium text-stone-700 hover:bg-stone-50 hover:text-stone-900">
+                  <ClipboardListIcon className="size-3.5" strokeWidth={2} />
+                  Provide outcome
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[200px] text-center text-xs">
+                Opens the outcome modal for this cycle
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
       </aside>
 
       {/* Main form */}
@@ -175,16 +208,24 @@ export function VariantBSidebar({
           </button>
         </div>
 
-        {/* Pre-fill banner — matches outcome modal accent style */}
-        <div className="mx-6 mb-5 rounded-r-lg border-l-4 border-[#d4a5a5] bg-white py-3 pl-4 pr-5 shadow-sm">
-          <p className="text-sm leading-relaxed text-stone-700">
-            <span className="font-semibold text-stone-900">
-              Pre-filled from outcome data.
-            </span>{" "}
-            Based on the outcome submitted on {scenario.submittedOn}. Review and
-            edit before submitting.
-          </p>
-        </div>
+        {/* Pre-fill banner */}
+        {hasOutcome ? (
+          <div className="mx-6 mb-5 rounded-r-lg border-l-4 border-[#d4a5a5] bg-white py-3 pl-4 pr-5 shadow-sm">
+            <p className="text-sm leading-relaxed text-stone-700">
+              <span className="font-semibold text-stone-900">Pre-filled from outcome data.</span>{" "}
+              Based on the outcome submitted on {scenario.submittedOn}.
+            </p>
+          </div>
+        ) : (
+          <div className="mx-6 mb-5 rounded-r-lg border-l-4 border-amber-400 bg-amber-50 py-3 pl-4 pr-5 shadow-sm">
+            <p className="text-sm leading-relaxed text-stone-700">
+              <span className="font-semibold text-stone-900">
+                Could not pre-fill — outcome data is missing.
+              </span>{" "}
+              Submit the outcome for this cycle first to enable automatic pre-filling of the rate and services.
+            </p>
+          </div>
+        )}
 
         <div className="flex-1 space-y-5 px-6 pb-6">
           {/* Treatment dropdown */}

@@ -19,7 +19,8 @@ export default function ClaimModalOptionsPage() {
     setBiopsiedCount(s?.prefill.servicePrefillQuantities?.pgt ?? 0)
   }
 
-  const hasBiopsy = scenario.prefill.prefilledServiceIds.includes("pgt")
+  const hasBiopsy =
+    scenario.hasOutcome && scenario.prefill.prefilledServiceIds.includes("pgt")
 
   return (
     <div className="min-h-screen bg-[#f8f5f2] pb-16">

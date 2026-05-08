@@ -116,6 +116,8 @@ export type OutcomeScenario = {
   id: string
   label: string
   summary: string
+  /** When false, no outcome data has been submitted yet */
+  hasOutcome: boolean
   submittedOn: string
   treatmentType: string
   authId: string
@@ -210,6 +212,7 @@ export const SCENARIOS: OutcomeScenario[] = [
     id: "full-cycle-biopsy",
     label: "Full cycle with biopsy",
     summary: "Retrieval completed, embryos created, 5 biopsied / 3 euploid",
+    hasOutcome: true,
     submittedOn: "Dec 10, 2025",
     treatmentType: "IVF Freeze-all",
     authId: "AUTH-00142",
@@ -242,6 +245,7 @@ export const SCENARIOS: OutcomeScenario[] = [
     id: "cancelled-before-retrieval",
     label: "Cancelled before retrieval",
     summary: "Monitoring done, cycle cancelled before retrieval",
+    hasOutcome: true,
     submittedOn: "Dec 14, 2025",
     treatmentType: "IVF Freeze-all",
     authId: "AUTH-00151",
@@ -262,6 +266,7 @@ export const SCENARIOS: OutcomeScenario[] = [
     id: "retrieval-no-embryos",
     label: "Retrieval, no embryos",
     summary: "Retrieval done, no viable embryos created",
+    hasOutcome: true,
     submittedOn: "Dec 16, 2025",
     treatmentType: "IVF Freeze-all",
     authId: "AUTH-00158",
@@ -279,6 +284,23 @@ export const SCENARIOS: OutcomeScenario[] = [
         "cx-monitoring": "Retrieval was completed",
         "cx-pre-transfer": "Not applicable — no transfer stage reached",
       },
+    },
+  },
+  {
+    id: "no-outcome",
+    label: "No outcome submitted",
+    summary: "No outcome data has been submitted for this cycle yet",
+    hasOutcome: false,
+    submittedOn: "",
+    treatmentType: "IVF Freeze-all",
+    authId: "AUTH-00163",
+    steps: [],
+    prefill: {
+      preselectedRateId: null,
+      disabledRateIds: [],
+      prefilledServiceIds: [],
+      disabledServiceIds: [],
+      reasonLabels: {},
     },
   },
 ]
