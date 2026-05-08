@@ -410,19 +410,35 @@ export function VariantBSidebar({
 
                         return (
                           <div className="ml-[30px] flex flex-col items-start gap-2">
-                            {/* Editable stepper — shown for non-locked services, or locked services without outcome */}
+                            {/* Locked display — outcome data, not editable */}
+                            {isLocked && hasOutcome && (
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5 rounded-md border border-stone-200 bg-stone-50 px-3 py-2">
+                                  <span className="text-[13px] font-medium text-stone-900">
+                                    {effectiveBiopsiedCount}
+                                  </span>
+                                  <span className="text-[13px] text-stone-400">
+                                    {service.unitLabel}
+                                  </span>
+                                </div>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="flex cursor-help items-center text-stone-400">
+                                      <LockIcon className="size-3.5" strokeWidth={2} />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-[200px] text-center text-xs">
+                                    Locked to outcome data. Update the outcome to adjust this value.
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            )}
+                            {/* Editable stepper — non-locked services, or locked without outcome */}
                             {(!isLocked || !hasOutcome) && (
                               <div className="flex flex-col gap-1.5">
-                                {!isLocked && (
-                                  <span className="text-[12px] text-stone-500">
-                                    Number of {service.unitLabel?.toLowerCase() ?? "units"}
-                                  </span>
-                                )}
-                                {isLocked && !hasOutcome && (
-                                  <span className="text-[12px] text-stone-500">
-                                    Number of {service.unitLabel?.toLowerCase() ?? "units"}
-                                  </span>
-                                )}
+                                <span className="text-[12px] text-stone-500">
+                                  Number of {service.unitLabel?.toLowerCase() ?? "units"}
+                                </span>
                                 <QuantityStepper
                                   value={isLocked ? manualBiopsiedCount : (quantities[service.id] ?? prefillQty ?? 0)}
                                   onChange={(v) =>
