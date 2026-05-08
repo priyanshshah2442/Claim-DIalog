@@ -477,7 +477,7 @@ export function VariantBSidebar({
                                 ))}
                               </div>
                             ) : (
-                              !noData && currentQty === 0 && (
+                              currentQty === 0 && (
                                 <p className="text-[12px] text-stone-400">
                                   Enter a quantity above to see the applicable rate.
                                 </p>
