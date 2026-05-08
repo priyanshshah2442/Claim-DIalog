@@ -309,14 +309,7 @@ export function VariantBSidebar({
                                 disabled ? "text-stone-300" : "text-stone-400"
                               )}>
                                 {rate.code}
-                              </span>
-                            )}
-                          </span>
-                          {disabled && (
-                            <LockIcon
-                              className="size-3 shrink-0 text-stone-400"
-                              strokeWidth={2}
-                            />
+                            </span>
                           )}
                         </div>
                         {disabled && reason && (
@@ -424,13 +417,39 @@ export function VariantBSidebar({
                           <div className="ml-[30px] flex flex-col items-start gap-2">
                             {/* Locked display — outcome data, not editable */}
                             {isLocked && hasOutcome && (
-                              <div className="flex items-center gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2">
-                                <span className="text-[13px] font-medium text-stone-900">
-                                  {effectiveBiopsiedCount}
-                                </span>
+                              <div className="flex items-center gap-2">
+                                <div className="inline-flex items-center overflow-hidden rounded-md border border-stone-300 bg-white">
+                                  <button
+                                    disabled
+                                    className="flex size-6 items-center justify-center text-stone-300 cursor-not-allowed"
+                                    aria-label="Decrease (disabled)"
+                                  >
+                                    <MinusIcon className="size-3" strokeWidth={2.5} />
+                                  </button>
+                                  <span className="w-8 border-x border-stone-300 py-1 text-center text-[12px] font-medium text-stone-900">
+                                    {effectiveBiopsiedCount}
+                                  </span>
+                                  <button
+                                    disabled
+                                    className="flex size-6 items-center justify-center text-stone-300 cursor-not-allowed"
+                                    aria-label="Increase (disabled)"
+                                  >
+                                    <PlusIcon className="size-3" strokeWidth={2.5} />
+                                  </button>
+                                </div>
                                 <span className="text-[13px] text-stone-400">
                                   {service.unitLabel}
                                 </span>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="flex cursor-help items-center text-stone-400">
+                                      <LockIcon className="size-3.5" strokeWidth={2} />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-[200px] text-center text-xs">
+                                    Locked to outcome data. Update the outcome to adjust this value.
+                                  </TooltipContent>
+                                </Tooltip>
                               </div>
                             )}
                             {/* Editable stepper — non-locked services, or locked without outcome */}
