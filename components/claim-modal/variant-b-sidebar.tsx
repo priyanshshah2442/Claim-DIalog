@@ -74,8 +74,7 @@ export function VariantBSidebar({
   const setQuantity = (id: string, value: number) =>
     setQuantities((prev) => ({ ...prev, [id]: Math.max(0, value) }))
 
-  // Resolve PGT biopsy to line items based on effective biopsied count
-  // Use outcome-provided biopsiedCount when available, else use manual entry
+  // Resolve PGT biopsy — quantity locked to outcome data (true biopsied count)
   const effectiveBiopsiedCount = scenario.hasOutcome ? biopsiedCount : manualBiopsiedCount
   const pgtService = SERVICES.find((s) => s.id === "pgt")
   const resolvedPgt: ResolvedLineItem[] = useMemo(() => {
@@ -88,6 +87,22 @@ export function VariantBSidebar({
       return []
     }
   }, [pgtService, effectiveBiopsiedCount])
+
+  // Resolve ICSI — pre-filled from outcome data but editable by the user
+  const icsiService = SERVICES.find((s) => s.id === "icsi")
+  const icsiQuantity = quantities["icsi"] !== undefined
+    ? quantities["icsi"]
+    : (scenario.prefill.servicePrefillQuantities?.icsi ?? 0)
+  const resolvedIcsi: ResolvedLineItem[] = useMemo(() => {
+    if (!icsiService || icsiService.kind !== "tiered-quantity" || icsiQuantity <= 0) {
+      return []
+    }
+    try {
+      return resolveLineItems(icsiService, icsiQuantity)
+    } catch {
+      return []
+    }
+  }, [icsiService, icsiQuantity])
 
   const hasOutcome = scenario.hasOutcome
 
@@ -384,54 +399,75 @@ export function VariantBSidebar({
                       })()}
 
                       {/* Tiered-quantity resolved items */}
-                      {isChecked && service.kind === "tiered-quantity" && service.id === "pgt" && (
-                        <div className="ml-[30px] flex flex-col items-start gap-2">
-                          {/* Manual entry stepper when no outcome data */}
-                          {!hasOutcome && (
-                            <div className="flex flex-col gap-1.5">
-                              <span className="text-[12px] text-stone-600">
-                                Number of embryos biopsied
-                              </span>
-                              <QuantityStepper
-                                value={manualBiopsiedCount}
-                                onChange={setManualBiopsiedCount}
-                                unitLabel="Embryos"
-                              />
-                            </div>
-                          )}
-                          {resolvedPgt.length > 0 ? (
-                            <div className="space-y-1.5">
-                              {resolvedPgt.map((item) => (
-                                <div
-                                  key={item.tierId}
-                                  className="flex items-center justify-between gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2"
-                                >
-                                  <span className="text-[13px] text-stone-900">
-                                    {item.label}
-                                    {item.code && (
-                                      <span className="ml-2 text-[11px] text-stone-400">
-                                        {item.code}
-                                      </span>
+                      {isChecked && service.kind === "tiered-quantity" && (() => {
+                        const isLocked = service.quantityLocked
+                        const isPgt = service.id === "pgt"
+                        const isIcsi = service.id === "icsi"
+                        const resolvedItems = isPgt ? resolvedPgt : isIcsi ? resolvedIcsi : []
+                        const currentQty = isPgt ? effectiveBiopsiedCount : (quantities[service.id] ?? scenario.prefill.servicePrefillQuantities?.[service.id] ?? 0)
+                        const prefillQty = scenario.prefill.servicePrefillQuantities?.[service.id]
+                        const noData = !hasOutcome && isLocked
+
+                        return (
+                          <div className="ml-[30px] flex flex-col items-start gap-2">
+                            {/* Editable stepper — shown for non-locked services, or locked services without outcome */}
+                            {(!isLocked || !hasOutcome) && (
+                              <div className="flex flex-col gap-1.5">
+                                {!isLocked && (
+                                  <span className="text-[12px] text-stone-500">
+                                    Number of {service.unitLabel?.toLowerCase() ?? "units"}
+                                    {hasOutcome && prefillQty !== undefined && (
+                                      <span className="ml-1.5 text-stone-400">(pre-filled from outcome)</span>
                                     )}
                                   </span>
+                                )}
+                                {isLocked && !hasOutcome && (
                                   <span className="text-[12px] text-stone-500">
-                                    × {item.quantity}
+                                    Number of {service.unitLabel?.toLowerCase() ?? "units"}
                                   </span>
-                                </div>
-                              ))}
-                              <p className="text-[11px] text-stone-500">
-                                Based on {effectiveBiopsiedCount} embryos biopsied.
-                              </p>
-                            </div>
-                          ) : (
-                            hasOutcome && (
-                              <p className="text-[12px] text-stone-500">
-                                No embryos biopsied in outcome data.
-                              </p>
-                            )
-                          )}
-                        </div>
-                      )}
+                                )}
+                                <QuantityStepper
+                                  value={isLocked ? manualBiopsiedCount : (quantities[service.id] ?? prefillQty ?? 0)}
+                                  onChange={(v) =>
+                                    isLocked
+                                      ? setManualBiopsiedCount(v)
+                                      : setQuantity(service.id, v)
+                                  }
+                                  unitLabel={service.unitLabel ?? ""}
+                                />
+                              </div>
+                            )}
+                            {resolvedItems.length > 0 ? (
+                              <div className="space-y-1.5">
+                                {resolvedItems.map((item) => (
+                                  <div
+                                    key={item.tierId}
+                                    className="flex items-center justify-between gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2"
+                                  >
+                                    <span className="text-[13px] text-stone-900">
+                                      {item.label}
+                                      {item.code && (
+                                        <span className="ml-2 text-[11px] text-stone-400">
+                                          {item.code}
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="text-[12px] text-stone-500">
+                                      × {item.quantity}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              !noData && currentQty === 0 && (
+                                <p className="text-[12px] text-stone-400">
+                                  Enter a quantity above to see the applicable rate.
+                                </p>
+                              )
+                            )}
+                          </div>
+                        )
+                      })()}
 
                       {/* Tiered option select (storage) */}
                       {isChecked && service.kind === "tiered" && service.options && (

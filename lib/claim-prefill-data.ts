@@ -45,6 +45,12 @@ export type BillableService = {
   kind: "flat" | "per-unit" | "tiered" | "tiered-quantity"
   /** Label beside the numeric stepper for per-unit services (e.g. "Embryos") */
   unitLabel?: string
+  /**
+   * When true, the quantity is locked to the outcome data value and cannot
+   * be edited by the user (e.g. PGT Biopsy, where we know the exact number
+   * biopsied). When false or absent, the quantity is pre-filled but editable.
+   */
+  quantityLocked?: boolean
   /** Options for tiered services (storage durations, etc.) */
   options?: { id: string; label: string }[]
   /** Tiers for tiered-quantity services (biopsy bands, etc.) */
@@ -208,7 +214,18 @@ export const RATES: TreatmentRate[] = [
 
 export const SERVICES: BillableService[] = [
   { id: "anaesthesia", label: "Anaesthesia", code: "00840", requires: "retrieval", kind: "flat" },
-  { id: "icsi", label: "ICSI", code: "89280", requires: "retrieval", kind: "flat" },
+  {
+    id: "icsi",
+    label: "ICSI",
+    requires: "retrieval",
+    kind: "tiered-quantity",
+    unitLabel: "Eggs",
+    quantityLocked: false,
+    tiers: [
+      { id: "icsi-1-10", label: "ICSI 1 to 10", code: "89280", minQty: 1, maxQty: 10 },
+      { id: "icsi-11-plus", label: "ICSI 11+", code: "89281", minQty: 11, maxQty: null },
+    ],
+  },
   {
     id: "storage",
     label: "Embryo storage",
@@ -227,6 +244,7 @@ export const SERVICES: BillableService[] = [
     requires: "biopsy",
     kind: "tiered-quantity",
     unitLabel: "Embryos",
+    quantityLocked: true,
     tiers: [
       { id: "biopsy-1-5", label: "Biopsy 1 to 5", code: "89290", minQty: 1, maxQty: 5 },
       { id: "biopsy-6-10", label: "Biopsy 6 to 10", code: "89291", minQty: 6, maxQty: 10 },
@@ -261,6 +279,7 @@ export const SCENARIOS: OutcomeScenario[] = [
       disabledServiceIds: [],
       servicePrefillQuantities: {
         pgt: 5,
+        icsi: 5,
       },
       servicePrefillTiers: {
         storage: "12m",
@@ -312,6 +331,9 @@ export const SCENARIOS: OutcomeScenario[] = [
       disabledRateIds: ["ivf-freeze-all", "cx-post-fertilization", "cx-post-stimulation", "cx-pre-monitoring"],
       prefilledServiceIds: ["anaesthesia", "icsi"],
       disabledServiceIds: ["storage", "pgt", "hatching"],
+      servicePrefillQuantities: {
+        icsi: 3,
+      },
       reasonLabels: {
         "ivf-freeze-all": "No embryos were created",
         "cx-post-fertilization": "No embryos were created",
