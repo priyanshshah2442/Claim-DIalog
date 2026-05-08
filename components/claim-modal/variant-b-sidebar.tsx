@@ -41,6 +41,8 @@ export function VariantBSidebar({
     scenario.prefill.servicePrefillTiers ?? {}
   )
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  // Local biopsied count for manual entry when no outcome data
+  const [manualBiopsiedCount, setManualBiopsiedCount] = useState(0)
 
   useEffect(() => {
     setRateId(scenario.prefill.preselectedRateId)
@@ -75,18 +77,20 @@ export function VariantBSidebar({
   const setQuantity = (id: string, value: number) =>
     setQuantities((prev) => ({ ...prev, [id]: Math.max(0, value) }))
 
-  // Resolve PGT biopsy to line items based on biopsiedCount
+  // Resolve PGT biopsy to line items based on effective biopsied count
+  // Use outcome-provided biopsiedCount when available, else use manual entry
+  const effectiveBiopsiedCount = scenario.hasOutcome ? biopsiedCount : manualBiopsiedCount
   const pgtService = SERVICES.find((s) => s.id === "pgt")
   const resolvedPgt: ResolvedLineItem[] = useMemo(() => {
-    if (!pgtService || pgtService.kind !== "tiered-quantity" || biopsiedCount <= 0) {
+    if (!pgtService || pgtService.kind !== "tiered-quantity" || effectiveBiopsiedCount <= 0) {
       return []
     }
     try {
-      return resolveLineItems(pgtService, biopsiedCount)
+      return resolveLineItems(pgtService, effectiveBiopsiedCount)
     } catch {
       return []
     }
-  }, [pgtService, biopsiedCount])
+  }, [pgtService, effectiveBiopsiedCount])
 
   const hasOutcome = scenario.hasOutcome
 
@@ -367,6 +371,19 @@ export function VariantBSidebar({
                       {/* Tiered-quantity resolved items */}
                       {isChecked && service.kind === "tiered-quantity" && service.id === "pgt" && (
                         <div className="ml-[30px] flex flex-col items-start gap-2">
+                          {/* Manual entry stepper when no outcome data */}
+                          {!hasOutcome && (
+                            <div className="flex flex-col gap-1.5">
+                              <span className="text-[12px] text-stone-600">
+                                Number of embryos biopsied
+                              </span>
+                              <QuantityStepper
+                                value={manualBiopsiedCount}
+                                onChange={setManualBiopsiedCount}
+                                unitLabel="Embryos"
+                              />
+                            </div>
+                          )}
                           {resolvedPgt.length > 0 ? (
                             <div className="space-y-1.5">
                               {resolvedPgt.map((item) => (
@@ -385,13 +402,15 @@ export function VariantBSidebar({
                                 </div>
                               ))}
                               <p className="text-[11px] text-stone-500">
-                                Based on {biopsiedCount} embryos biopsied.
+                                Based on {effectiveBiopsiedCount} embryos biopsied.
                               </p>
                             </div>
                           ) : (
-                            <p className="text-[12px] text-stone-500">
-                              Set # biopsied in sidebar to resolve line items.
-                            </p>
+                            hasOutcome && (
+                              <p className="text-[12px] text-stone-500">
+                                No embryos biopsied in outcome data.
+                              </p>
+                            )
                           )}
                         </div>
                       )}
