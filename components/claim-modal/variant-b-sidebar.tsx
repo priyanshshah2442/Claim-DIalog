@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react"
 import {
   XIcon,
   LockIcon,
-  Wand2Icon,
   CheckCircle2Icon,
   XCircleIcon,
   MinusIcon,
@@ -350,7 +349,6 @@ export function VariantBSidebar({
                             </span>
                           )}
                         </span>
-                        {prefilled && isChecked && <PrefilledHint />}
                       </div>
 
                       {/* Per-unit stepper (legacy) */}
@@ -490,23 +488,6 @@ export function VariantBSidebar({
  * Conveys "this was pre-filled from outcome data" without adding the
  * visual weight of a full pill.
  */
-function PrefilledHint() {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          className="inline-flex cursor-help items-center text-stone-400"
-          aria-label="Pre-filled from outcome data"
-        >
-          <Wand2Icon className="size-3.5" strokeWidth={2} />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-[200px] text-center text-xs">
-        Pre-filled from outcome data
-      </TooltipContent>
-    </Tooltip>
-  )
-}
 
 function Checkbox({
   checked,
