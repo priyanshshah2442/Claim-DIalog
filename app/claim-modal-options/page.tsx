@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { MinusIcon, PlusIcon } from "lucide-react"
 import { SCENARIOS } from "@/lib/claim-prefill-data"
 import { VariantBSidebar } from "@/components/claim-modal/variant-b-sidebar"
 import { cn } from "@/lib/utils"
@@ -8,6 +9,17 @@ import { cn } from "@/lib/utils"
 export default function ClaimModalOptionsPage() {
   const [scenarioId, setScenarioId] = useState(SCENARIOS[0].id)
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0]
+
+  const defaultBiopsied = scenario.prefill.servicePrefillQuantities?.pgt ?? 0
+  const [biopsiedCount, setBiopsiedCount] = useState(defaultBiopsied)
+
+  const handleScenarioChange = (id: string) => {
+    setScenarioId(id)
+    const s = SCENARIOS.find((sc) => sc.id === id)
+    setBiopsiedCount(s?.prefill.servicePrefillQuantities?.pgt ?? 0)
+  }
+
+  const hasBiopsy = scenario.prefill.prefilledServiceIds.includes("pgt")
 
   return (
     <div className="min-h-screen bg-[#f8f5f2] pb-16">
@@ -32,7 +44,7 @@ export default function ClaimModalOptionsPage() {
                 {SCENARIOS.map((s) => (
                   <button
                     key={s.id}
-                    onClick={() => setScenarioId(s.id)}
+                    onClick={() => handleScenarioChange(s.id)}
                     className={cn(
                       "rounded-lg px-3 py-1.5 text-left text-[12px] font-medium transition-colors",
                       scenarioId === s.id
@@ -47,26 +59,40 @@ export default function ClaimModalOptionsPage() {
             </div>
           </div>
 
-          <div className="mt-4 rounded-lg bg-white px-4 py-3">
-            <p className="text-[12px] text-stone-600">
-              <span className="font-semibold text-stone-900">Scenario:</span>{" "}
-              {scenario.summary}
-              <span className="mx-2 text-stone-300">·</span>
-              <span className="font-semibold text-stone-900">
-                Pre-selected rate:
-              </span>{" "}
-              <span className="text-stone-700">
-                {scenario.prefill.preselectedRateId ?? "none"}
-              </span>
-              <span className="mx-2 text-stone-300">·</span>
-              <span className="font-semibold text-stone-900">
-                Pre-checked services:
-              </span>{" "}
-              <span className="text-stone-700">
-                {scenario.prefill.prefilledServiceIds.length}
-              </span>
-            </p>
-          </div>
+          {/* Demo controls */}
+          {hasBiopsy && (
+            <div className="mt-4 flex items-center gap-4 rounded-lg border border-dashed border-stone-300 bg-white px-4 py-3">
+              <p className="text-[12px] font-medium text-stone-500 uppercase tracking-wide">
+                Demo controls
+              </p>
+              <div className="h-4 w-px bg-stone-200" />
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] text-stone-600">
+                  # Embryos biopsied
+                </span>
+                <div className="inline-flex items-center overflow-hidden rounded-md border border-stone-300 bg-stone-50">
+                  <button
+                    onClick={() => setBiopsiedCount((v) => Math.max(0, v - 1))}
+                    disabled={biopsiedCount <= 0}
+                    className="flex size-6 items-center justify-center text-stone-600 hover:bg-stone-100 disabled:cursor-not-allowed disabled:text-stone-300"
+                    aria-label="Decrease"
+                  >
+                    <MinusIcon className="size-3" strokeWidth={2.5} />
+                  </button>
+                  <span className="w-8 border-x border-stone-300 py-1 text-center text-[12px] font-medium text-stone-900">
+                    {biopsiedCount}
+                  </span>
+                  <button
+                    onClick={() => setBiopsiedCount((v) => v + 1)}
+                    className="flex size-6 items-center justify-center text-stone-600 hover:bg-stone-100"
+                    aria-label="Increase"
+                  >
+                    <PlusIcon className="size-3" strokeWidth={2.5} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -74,7 +100,7 @@ export default function ClaimModalOptionsPage() {
       <div className="mx-auto max-w-[1100px] px-8 pt-8">
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-[0_8px_24px_-12px_rgba(28,25,23,0.15)]">
           <div className="min-h-[680px]">
-            <VariantBSidebar scenario={scenario} />
+            <VariantBSidebar scenario={scenario} biopsiedCount={biopsiedCount} />
           </div>
         </div>
 

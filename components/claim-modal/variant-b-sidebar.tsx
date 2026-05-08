@@ -10,6 +10,7 @@ import {
   MinusIcon,
   PlusIcon,
   AlertTriangleIcon,
+  PencilIcon,
 } from "lucide-react"
 import {
   RATES,
@@ -21,15 +22,13 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
-/**
- * Variant B (refined v5) — Outcome sidebar + pre-fill banner with
- * support for flat, per-unit, tiered, and tiered-quantity billable services.
- *
- * tiered-quantity services (e.g. PGT Biopsy) are resolved to line items
- * based on the quantity from outcome data (# biopsied), which can be
- * edited in the sidebar to see how different quantities resolve.
- */
-export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
+export function VariantBSidebar({
+  scenario,
+  biopsiedCount,
+}: {
+  scenario: OutcomeScenario
+  biopsiedCount: number
+}) {
   const [rateId, setRateId] = useState<string | null>(scenario.prefill.preselectedRateId)
   const [checked, setChecked] = useState<Set<string>>(
     new Set(scenario.prefill.prefilledServiceIds)
@@ -42,16 +41,11 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
   )
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
-  // Editable # biopsied in sidebar — starts from outcome data
-  const initialBiopsied = scenario.prefill.servicePrefillQuantities?.pgt ?? 0
-  const [biopsiedCount, setBiopsiedCount] = useState(initialBiopsied)
-
   useEffect(() => {
     setRateId(scenario.prefill.preselectedRateId)
     setChecked(new Set(scenario.prefill.prefilledServiceIds))
     setQuantities(scenario.prefill.servicePrefillQuantities ?? {})
     setTierSelections(scenario.prefill.servicePrefillTiers ?? {})
-    setBiopsiedCount(scenario.prefill.servicePrefillQuantities?.pgt ?? 0)
   }, [
     scenario.id,
     scenario.prefill.preselectedRateId,
@@ -97,96 +91,73 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
     <div className="flex h-full w-full bg-white">
       {/* Sidebar — recap of the submitted outcome */}
       <aside className="flex w-[280px] shrink-0 flex-col gap-4 border-r border-stone-200 bg-[#f8f5f2] px-5 py-5">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-            Outcome Submitted
-          </p>
-          <p className="mt-1 font-serif text-[15px] font-semibold text-stone-900">
-            {scenario.treatmentType}
-          </p>
-          <p className="mt-0.5 text-[12px] text-stone-500">
-            {scenario.authId} · {scenario.submittedOn}
-          </p>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+              Outcome Submitted
+            </p>
+            <p className="mt-1 font-serif text-[15px] font-semibold text-stone-900">
+              {scenario.treatmentType}
+            </p>
+            <p className="mt-0.5 text-[12px] text-stone-500">
+              {scenario.authId} · {scenario.submittedOn}
+            </p>
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+                aria-label="Update outcome data"
+              >
+                <PencilIcon className="size-3" strokeWidth={2} />
+                Update
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[200px] text-center text-xs">
+              Opens the outcome modal to update submitted data
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <div className="h-px bg-stone-200" />
 
         <ul className="space-y-2.5">
-          {scenario.steps.map((step) => {
-            // Make # Biopsied editable
-            const isBiopsiedStep = step.label === "# Biopsied"
-            return (
-              <li key={step.label} className="flex items-start gap-2.5">
+          {scenario.steps.map((step) => (
+            <li key={step.label} className="flex items-start gap-2.5">
+              {step.status === "yes" && (
+                <CheckCircle2Icon
+                  className="mt-0.5 size-4 shrink-0 text-[#7a9a8e]"
+                  strokeWidth={2}
+                />
+              )}
+              {step.status === "no" && (
+                <XCircleIcon
+                  className="mt-0.5 size-4 shrink-0 text-stone-400"
+                  strokeWidth={2}
+                />
+              )}
+              {step.status === "value" && (
+                <span className="mt-1 block size-1.5 shrink-0 rounded-full bg-stone-400" />
+              )}
+              <div className="flex-1 leading-tight">
+                <div className="text-[12px] font-medium text-stone-900">
+                  {step.label}
+                </div>
                 {step.status === "yes" && (
-                  <CheckCircle2Icon
-                    className="mt-0.5 size-4 shrink-0 text-[#7a9a8e]"
-                    strokeWidth={2}
-                  />
+                  <div className="text-[11px] text-stone-500">Yes</div>
                 )}
                 {step.status === "no" && (
-                  <XCircleIcon
-                    className="mt-0.5 size-4 shrink-0 text-stone-400"
-                    strokeWidth={2}
-                  />
+                  <div className="text-[11px] text-stone-500">No</div>
                 )}
-                {step.status === "value" && (
-                  <span className="mt-1 block size-1.5 shrink-0 rounded-full bg-stone-400" />
-                )}
-                <div className="flex-1 leading-tight">
-                  <div className="text-[12px] font-medium text-stone-900">
-                    {step.label}
+                {step.status === "value" && step.value && (
+                  <div className="text-[11px] text-stone-500">
+                    {step.label === "# Biopsied" ? biopsiedCount : step.value}
                   </div>
-                  {step.status === "yes" && (
-                    <div className="text-[11px] text-stone-500">Yes</div>
-                  )}
-                  {step.status === "no" && (
-                    <div className="text-[11px] text-stone-500">No</div>
-                  )}
-                  {step.status === "value" && !isBiopsiedStep && step.value && (
-                    <div className="text-[11px] text-stone-500">{step.value}</div>
-                  )}
-                  {isBiopsiedStep && (
-                    <div className="mt-1.5">
-                      <SmallStepper
-                        value={biopsiedCount}
-                        onChange={setBiopsiedCount}
-                      />
-                    </div>
-                  )}
-                </div>
-              </li>
-            )
-          })}
+                )}
+              </div>
+            </li>
+          ))}
         </ul>
-
-        {/* Show resolved line items when biopsied > 0 */}
-        {biopsiedCount > 0 && resolvedPgt.length > 0 && (
-          <>
-            <div className="h-px bg-stone-200" />
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                Resolved Biopsy Items
-              </p>
-              <ul className="mt-2 space-y-1.5">
-                {resolvedPgt.map((item) => (
-                  <li
-                    key={item.tierId}
-                    className="rounded-md border border-stone-200 bg-white px-3 py-2"
-                  >
-                    <div className="text-[12px] font-medium text-stone-900">
-                      {item.label}
-                    </div>
-                    {item.quantity > 1 && (
-                      <div className="text-[11px] text-stone-500">
-                        × {item.quantity} embryos
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </>
-        )}
       </aside>
 
       {/* Main form */}
@@ -373,10 +344,7 @@ export function VariantBSidebar({ scenario }: { scenario: OutcomeScenario }) {
                                 </div>
                               ))}
                               <p className="text-[11px] text-stone-500">
-                                Based on {biopsiedCount} embryos biopsied.{" "}
-                                <span className="text-stone-400">
-                                  Adjust in sidebar to see changes.
-                                </span>
+                                Based on {biopsiedCount} embryos biopsied.
                               </p>
                             </div>
                           ) : (
@@ -534,42 +502,6 @@ function QuantityStepper({
   )
 }
 
-/**
- * Small stepper for sidebar — compact variant without unit label.
- */
-function SmallStepper({
-  value,
-  onChange,
-}: {
-  value: number
-  onChange: (v: number) => void
-}) {
-  return (
-    <div className="inline-flex items-center overflow-hidden rounded-md border border-stone-300 bg-white">
-      <button
-        onClick={() => onChange(Math.max(0, value - 1))}
-        disabled={value <= 0}
-        className="flex size-6 items-center justify-center text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-300"
-        aria-label="Decrease"
-      >
-        <MinusIcon className="size-3" strokeWidth={2.5} />
-      </button>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
-        className="w-8 border-x border-stone-300 py-1 text-center text-[12px] font-medium text-stone-900 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-      />
-      <button
-        onClick={() => onChange(value + 1)}
-        className="flex size-6 items-center justify-center text-stone-600 hover:bg-stone-50"
-        aria-label="Increase"
-      >
-        <PlusIcon className="size-3" strokeWidth={2.5} />
-      </button>
-    </div>
-  )
-}
 
 function TierSelect({
   options,
