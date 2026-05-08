@@ -394,11 +394,9 @@ export function VariantBSidebar({
                                   <span className="text-[13px] text-stone-900">
                                     {item.label}
                                   </span>
-                                  {item.quantity > 1 && (
-                                    <span className="text-[12px] text-stone-500">
-                                      × {item.quantity}
-                                    </span>
-                                  )}
+                                  <span className="text-[12px] text-stone-500">
+                                    × {item.quantity}
+                                  </span>
                                 </div>
                               ))}
                               <p className="text-[11px] text-stone-500">
