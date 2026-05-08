@@ -30,6 +30,7 @@ export type ServiceTier = {
 export type BillableService = {
   id: string
   label: string
+  code?: string  // CPT/billing code
   requires: "retrieval" | "embryos-stored" | "biopsy" | "none"
   /**
    * "flat"           — simple checkbox only
@@ -184,11 +185,12 @@ export const RATES: TreatmentRate[] = [
 ]
 
 export const SERVICES: BillableService[] = [
-  { id: "anaesthesia", label: "Anaesthesia", requires: "retrieval", kind: "flat" },
-  { id: "icsi", label: "ICSI", requires: "retrieval", kind: "flat" },
+  { id: "anaesthesia", label: "Anaesthesia", code: "00840", requires: "retrieval", kind: "flat" },
+  { id: "icsi", label: "ICSI", code: "89280", requires: "retrieval", kind: "flat" },
   {
     id: "storage",
     label: "Embryo storage",
+    code: "89342",
     requires: "embryos-stored",
     kind: "tiered",
     options: [
@@ -200,6 +202,7 @@ export const SERVICES: BillableService[] = [
   {
     id: "pgt",
     label: "PGT Biopsy",
+    code: "89290",
     requires: "biopsy",
     kind: "tiered-quantity",
     unitLabel: "Embryos",
@@ -209,7 +212,7 @@ export const SERVICES: BillableService[] = [
       { id: "biopsy-overage", label: "Overage per embryo (11+)", minQty: 11, maxQty: null, isOverage: true },
     ],
   },
-  { id: "hatching", label: "Assisted hatching", requires: "embryos-stored", kind: "flat" },
+  { id: "hatching", label: "Assisted hatching", code: "89253", requires: "embryos-stored", kind: "flat" },
 ]
 
 export const SCENARIOS: OutcomeScenario[] = [

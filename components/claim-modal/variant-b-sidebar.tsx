@@ -342,7 +342,14 @@ export function VariantBSidebar({
                           onChange={() => toggleChecked(service.id)}
                           label={service.label}
                         />
-                        <span className="text-sm text-stone-900">{service.label}</span>
+                        <span className="text-sm text-stone-900">
+                          {service.label}
+                          {service.code && (
+                            <span className="ml-2 text-[11px] text-stone-400">
+                              {service.code}
+                            </span>
+                          )}
+                        </span>
                         {prefilled && isChecked && <PrefilledHint />}
                       </div>
 
