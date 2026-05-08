@@ -57,8 +57,6 @@ export function VariantBSidebar({
   ])
 
   const selectedRate = useMemo(() => RATES.find((r) => r.id === rateId), [rateId])
-  const treatmentPrefilled =
-    rateId !== null && rateId === scenario.prefill.preselectedRateId
 
   // Only show services that are available for this outcome
   const visibleServices = SERVICES.filter(
@@ -233,12 +231,9 @@ export function VariantBSidebar({
         <div className="flex-1 space-y-5 px-6 pb-6">
           {/* Treatment dropdown */}
           <div>
-            <div className="flex items-center gap-1.5">
-              <label className="text-[13px] font-semibold text-stone-900">
-                Treatment
-              </label>
-              {treatmentPrefilled && <PrefilledHint />}
-            </div>
+            <label className="text-[13px] font-semibold text-stone-900">
+              Treatment
+            </label>
             <div className="relative mt-1.5">
               <button
                 onClick={() => setDropdownOpen((v) => !v)}
