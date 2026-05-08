@@ -11,6 +11,7 @@
 export type TreatmentRate = {
   id: string
   label: string
+  code?: string  // CPT/billing code (e.g. "58970")
   kind: "main" | "cancellation"
   stage: "pre-retrieval" | "post-retrieval" | "pre-transfer"
 }
@@ -155,24 +156,28 @@ export const RATES: TreatmentRate[] = [
   {
     id: "ivf-freeze-all",
     label: "IVF Freeze-all",
+    code: "58970",
     kind: "main",
     stage: "post-retrieval",
   },
   {
     id: "cx-monitoring",
     label: "Cycle Monitoring or Cancelled ART Cycle",
+    code: "58974",
     kind: "cancellation",
     stage: "pre-retrieval",
   },
   {
     id: "cx-aspiration",
     label: "Cycle Cancelled After Aspiration",
+    code: "58975",
     kind: "cancellation",
     stage: "post-retrieval",
   },
   {
     id: "cx-pre-transfer",
     label: "Cycle Cancelled Prior to Transfer",
+    code: "58976",
     kind: "cancellation",
     stage: "pre-transfer",
   },

@@ -100,18 +100,27 @@ export function VariantBSidebar({
       <aside className="flex w-[280px] shrink-0 flex-col gap-4 border-r border-stone-200 bg-[#f8f5f2] px-5 py-5">
         {hasOutcome ? (
           <>
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                  Outcome Submitted
-                </p>
-                <p className="mt-1 font-serif text-[15px] font-semibold text-stone-900">
-                  {scenario.treatmentType}
-                </p>
-                <p className="mt-0.5 text-[12px] text-stone-500">
-                  {scenario.authId} · {scenario.submittedOn}
-                </p>
-              </div>
+                        <div className="flex items-start justify-between gap-2">
+                          <span
+                            className={cn(
+                              "text-[13px]",
+                              disabled ? "text-stone-400" : "text-stone-900"
+                            )}
+                          >
+                            {rate.label}
+                            {rate.code && (
+                              <span className="ml-2 text-[11px] text-stone-400">
+                                {rate.code}
+                              </span>
+                            )}
+                          </span>
+                          {disabled && (
+                            <LockIcon
+                              className="size-3 shrink-0 text-stone-400"
+                              strokeWidth={2}
+                            />
+                          )}
+                        </div>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -245,7 +254,14 @@ export function VariantBSidebar({
                 onClick={() => setDropdownOpen((v) => !v)}
                 className="flex w-full items-center justify-between rounded-lg border border-stone-300 bg-white px-3.5 py-2.5 text-left text-sm text-stone-900 hover:border-stone-400"
               >
-                <span>{selectedRate?.label ?? "Select a treatment"}</span>
+                <span>
+                  {selectedRate?.label ?? "Select a treatment"}
+                  {selectedRate?.code && (
+                    <span className="ml-2 text-[12px] text-stone-400">
+                      {selectedRate.code}
+                    </span>
+                  )}
+                </span>
                 <svg
                   className="size-4 text-stone-500"
                   viewBox="0 0 20 20"
